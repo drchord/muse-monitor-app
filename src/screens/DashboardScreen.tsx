@@ -5,6 +5,10 @@ import { BandChart } from '../components/BandChart';
 import { NeurofeedbackGauge } from '../components/NeurofeedbackGauge';
 import { SignalDots } from '../components/SignalDots';
 import type { BandName } from '../ble/constants';
+import { AudioFeedback, StateTransitionDetector } from '../audio/AudioFeedback';
+
+const audioFeedback = new AudioFeedback();
+const transitionDetector = new StateTransitionDetector(60);
 
 const HISTORY_MAX = 300;
 
@@ -19,6 +23,12 @@ export function DashboardScreen({ navigation }: any) {
   const [history,    setHistory]    = useState<BandHistory>(emptyHistory());
   const [depthScore, setDepthScore] = useState(0);
   const [inState,    setInState]    = useState(false);
+
+  // Load audio on mount, unload on unmount
+  useEffect(() => {
+    audioFeedback.load().catch(() => {}); // silently fail if expo-av not ready
+    return () => { audioFeedback.unload(); };
+  }, []);
 
   useEffect(() => {
     if (!bandPowers) return;
@@ -40,6 +50,10 @@ export function DashboardScreen({ navigation }: any) {
     const score  = Math.min(100, Math.round(Math.pow(10, target) / total * 100));
     setDepthScore(score);
     setInState(score > 60);
+
+    const transition = transitionDetector.update(score);
+    if (transition === 'enter') audioFeedback.playReward();
+    if (transition === 'drift')  audioFeedback.playDrift();
   }, [bandPowers]);
 
   return (
@@ -70,6 +84,14 @@ export function DashboardScreen({ navigation }: any) {
       <TouchableOpacity onPress={() => navigation.navigate('Stream')}>
         <Text style={styles.oscInfo}>→ {oscConfig.host}:{oscConfig.port}  (tap to configure)</Text>
       </TouchableOpacity>
+
+      <View style={styles.oscRow}>
+        <Text style={styles.label}>Chime Volume</Text>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          {/* Simple text display — full slider in Task 15b with @react-native-community/slider */}
+          <Text style={{ color: '#6366f1' }}>70%</Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
