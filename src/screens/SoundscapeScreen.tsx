@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { SoundscapePlayer } from '../audio/SoundscapePlayer';
 import { SoundscapeGrid } from '../components/SoundscapeGrid';
 import { SpotifyController, TrackInfo } from '@/spotify/SpotifyRemote';
 
-const player  = new SoundscapePlayer();
-const spotify = new SpotifyController();
+const player = new SoundscapePlayer();
 
 export function SoundscapeScreen() {
+  const spotifyRef = useRef<SpotifyController>(new SpotifyController());
+  const spotify = spotifyRef.current;
+
   const [activeKey,        setActiveKey]        = useState<string | null>(null);
   const [volume,           setVolume]           = useState(0.5);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
@@ -80,13 +82,13 @@ export function SoundscapeScreen() {
               </Text>
             )}
             <View style={styles.spotifyControls}>
-              <TouchableOpacity style={styles.ctrlBtn} onPress={() => spotify.pause()}>
+              <TouchableOpacity style={styles.ctrlBtn} onPress={() => { spotify.pause().catch(console.error); }}>
                 <Text style={styles.ctrlIcon}>⏸</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.ctrlBtn} onPress={() => spotify.resume()}>
+              <TouchableOpacity style={styles.ctrlBtn} onPress={() => { spotify.resume().catch(console.error); }}>
                 <Text style={styles.ctrlIcon}>▶️</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.ctrlBtn} onPress={() => spotify.skipNext()}>
+              <TouchableOpacity style={styles.ctrlBtn} onPress={() => { spotify.skipNext().catch(console.error); }}>
                 <Text style={styles.ctrlIcon}>⏭</Text>
               </TouchableOpacity>
             </View>

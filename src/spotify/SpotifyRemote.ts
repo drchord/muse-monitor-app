@@ -34,6 +34,7 @@ export class SpotifyController {
       const session = await auth.authorize({
         clientID:    CLIENT_ID,
         redirectURL: REDIRECT_URI,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- react-native-spotify-remote does not export ApiScope; string[] is correct at runtime
         scopes:      SCOPES as any,
       });
       await remote.connect(session.accessToken);
@@ -46,9 +47,14 @@ export class SpotifyController {
   }
 
   async disconnect(): Promise<void> {
-    const { remote } = await import('react-native-spotify-remote');
-    await remote.disconnect();
-    this.connected = false;
+    try {
+      const { remote } = await import('react-native-spotify-remote');
+      await remote.disconnect();
+    } catch (e) {
+      console.error('Spotify disconnect failed:', e);
+    } finally {
+      this.connected = false;
+    }
   }
 
   isConnected(): boolean { return this.connected; }
@@ -60,18 +66,33 @@ export class SpotifyController {
   }
 
   async pause(): Promise<void> {
-    const { remote } = await import('react-native-spotify-remote');
-    await remote.pause();
+    if (!this.connected) return;
+    try {
+      const { remote } = await import('react-native-spotify-remote');
+      await remote.pause();
+    } catch (e) {
+      console.error('Spotify pause failed:', e);
+    }
   }
 
   async resume(): Promise<void> {
-    const { remote } = await import('react-native-spotify-remote');
-    await remote.resume();
+    if (!this.connected) return;
+    try {
+      const { remote } = await import('react-native-spotify-remote');
+      await remote.resume();
+    } catch (e) {
+      console.error('Spotify resume failed:', e);
+    }
   }
 
   async skipNext(): Promise<void> {
-    const { remote } = await import('react-native-spotify-remote');
-    await remote.skipToNext();
+    if (!this.connected) return;
+    try {
+      const { remote } = await import('react-native-spotify-remote');
+      await remote.skipToNext();
+    } catch (e) {
+      console.error('Spotify skipNext failed:', e);
+    }
   }
 
   async setVolume(_v: number): Promise<void> {
