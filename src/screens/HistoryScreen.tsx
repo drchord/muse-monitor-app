@@ -7,17 +7,20 @@ export function HistoryScreen() {
   const { sessions, loadSessions } = useSessionStore();
   useEffect(() => { loadSessions(); }, []);
 
-  const fmt = (s: number) => `${Math.floor(s / 60)}m ${s % 60}s`;
+  const fmt = (s: number) => {
+    const safe = Math.max(0, s);
+    return `${Math.floor(safe / 60)}m ${safe % 60}s`;
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Session History</Text>
-      {sessions.length === 0 && (
-        <Text style={styles.empty}>No sessions recorded yet. Complete a meditation session to see history here.</Text>
-      )}
       <FlatList
         data={sessions}
         keyExtractor={s => String(s.id)}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No sessions recorded yet. Complete a meditation session to see history here.</Text>
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.date}>{new Date(item.startedAt).toLocaleDateString()}</Text>
