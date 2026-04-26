@@ -1,0 +1,44 @@
+{
+  "name": "muse-monitor-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-navigation/native": "^7.2.2",
+    "@react-navigation/native-stack": "^7.14.12",
+    "expo": "~54.0.33",
+    "expo-dev-client": "^55.0.28",
+    "expo-file-system": "^55.0.17",
+    "expo-sqlite": "^55.0.15",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-ble-plx": "^3.5.1",
+    "react-native-gesture-handler": "^2.31.1",
+    "react-native-reanimated": "^4.3.0",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0",
+    "react-native-udp": "^4.1.7",
+    "victory-native": "^41.20.2",
+    "zustand": "^5.0.12"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest-expo": "^55.0.16"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(jest-)?react-native|@react-native|expo|@expo|victory-native|react-native-reanimated)"
+    ]
+  }
+}
