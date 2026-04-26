@@ -1,7 +1,39 @@
 {
   "expo": {
-    "name": "muse-monitor-app",
+    "name": "Muse Monitor",
     "slug": "muse-monitor-app",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111111"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.drsugato.musemonitor",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Required to connect to Muse S EEG headband",
+        "NSBluetoothPeripheralUsageDescription": "Required to connect to Muse S EEG headband",
+        "UIBackgroundModes": ["bluetooth-central", "audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#111111"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "owner": "drsugato"
   }
 }
