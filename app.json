@@ -40,11 +40,6 @@
       }
     },
     "owner": "drsugato",
-    "plugins": [
-      ["react-native-spotify-remote", {
-        "spotifyClientID": "dd746e8ec4e94dd2bc099a66efbe8157",
-        "spotifyRedirectURI": "muse-monitor://callback"
-      }]
-    ]
+    "plugins": []
   }
 }
