@@ -15,11 +15,12 @@ export default function App() {
       <Stack.Navigator
         initialRouteName="Connect"
         screenOptions={{
-          headerStyle:    { backgroundColor: '#1f2937' },
-          headerTintColor: '#fff',
+          headerStyle:     { backgroundColor: '#0f172a' },
+          headerTintColor: '#f1f5f9',
+          headerTitleStyle: { fontWeight: '700', letterSpacing: 0.3 },
         }}
       >
-        <Stack.Screen name="Connect"    component={ConnectScreen}    options={{ title: 'Muse Monitor' }} />
+        <Stack.Screen name="Connect"    component={ConnectScreen}    options={{ title: 'Muse Plus' }} />
         <Stack.Screen name="Dashboard"  component={DashboardScreen}  options={{ title: 'Live EEG' }} />
         <Stack.Screen name="Stream"     component={StreamScreen}     options={{ title: 'OSC Settings' }} />
         <Stack.Screen name="History"    component={HistoryScreen}    options={{ title: 'Sessions' }} />

@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import { SoundscapePlayer } from '../audio/SoundscapePlayer';
 import { SoundscapeGrid } from '../components/SoundscapeGrid';
 import { SpotifyController, TrackInfo } from '@/spotify/SpotifyRemote';
+import { C } from '../theme';
 
 const player = new SoundscapePlayer();
 
@@ -41,60 +42,72 @@ export function SoundscapeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Soundscapes</Text>
-      <Text style={styles.note}>Loops continuously. Tap again to stop. Chimes play on top.</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.heading}>Soundscapes</Text>
+      <Text style={styles.subheading}>Loops continuously · Chimes play on top · Tap again to stop</Text>
 
-      <View style={styles.volRow}>
-        <Text style={styles.label}>Volume</Text>
+      {/* Volume */}
+      <View style={styles.card}>
+        <View style={styles.volRow}>
+          <Text style={styles.label}>🔊  Volume</Text>
+          <Text style={styles.volPct}>{Math.round(volume * 100)}%</Text>
+        </View>
         <Slider
-          style={{ flex: 1, marginLeft: 12 }}
+          style={{ width: '100%', height: 36 }}
           minimumValue={0}
           maximumValue={1}
           value={volume}
           onValueChange={handleVolume}
-          minimumTrackTintColor="#6366f1"
-          maximumTrackTintColor="#374151"
+          minimumTrackTintColor={C.accent}
+          maximumTrackTintColor={C.border}
+          thumbTintColor={C.accent}
         />
-        <Text style={styles.volPct}>{Math.round(volume * 100)}%</Text>
       </View>
 
+      {/* Grid */}
       <SoundscapeGrid
         activeKey={activeKey}
         onSelect={handleSelect}
         onStop={handleStop}
       />
 
-      <View style={styles.spotifySection}>
-        <Text style={styles.catHeader}>Spotify</Text>
+      {/* Spotify */}
+      <View style={styles.spotifyCard}>
+        <View style={styles.spotifyHeader}>
+          <Text style={styles.spotifyLogo}>🎵</Text>
+          <Text style={styles.spotifyTitle}>Spotify</Text>
+          {spotifyConnected && (
+            <View style={styles.connectedBadge}>
+              <Text style={styles.connectedText}>● Connected</Text>
+            </View>
+          )}
+        </View>
+
         {!spotifyConnected ? (
-          <TouchableOpacity
-            style={[styles.tile, { width: '100%', justifyContent: 'center' }]}
-            onPress={handleSpotifyConnect}
-          >
-            <Text style={styles.tileText}>Connect Spotify (Premium)</Text>
+          <TouchableOpacity style={styles.spotifyBtn} onPress={handleSpotifyConnect}>
+            <Text style={styles.spotifyBtnText}>Connect Spotify Premium →</Text>
           </TouchableOpacity>
         ) : (
-          <View>
+          <View style={styles.playerWrap}>
             {trackInfo && (
-              <Text style={styles.trackInfo}>
-                {trackInfo.name} — {trackInfo.artistName}
-              </Text>
+              <View style={styles.trackWrap}>
+                <Text style={styles.trackName} numberOfLines={1}>{trackInfo.name}</Text>
+                <Text style={styles.trackArtist} numberOfLines={1}>{trackInfo.artistName}</Text>
+              </View>
             )}
-            <View style={styles.spotifyControls}>
+            <View style={styles.controls}>
               <TouchableOpacity style={styles.ctrlBtn} onPress={() => { spotify.pause().catch(console.error); }}>
                 <Text style={styles.ctrlIcon}>⏸</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.ctrlBtn} onPress={() => { spotify.resume().catch(console.error); }}>
-                <Text style={styles.ctrlIcon}>▶️</Text>
+              <TouchableOpacity style={styles.ctrlBtnMain} onPress={() => { spotify.resume().catch(console.error); }}>
+                <Text style={styles.ctrlIcon}>▶</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.ctrlBtn} onPress={() => { spotify.skipNext().catch(console.error); }}>
                 <Text style={styles.ctrlIcon}>⏭</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.spotifyNote}>
-              Play any meditation playlist in Spotify, then return here.
-              OSC streaming and chimes continue regardless.
+              Start any meditation playlist in Spotify, then return here. OSC and chimes continue regardless.
             </Text>
           </View>
         )}
@@ -104,19 +117,44 @@ export function SoundscapeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:       { flex: 1, backgroundColor: '#111', padding: 16 },
-  title:           { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  note:            { color: '#6b7280', fontSize: 13, marginBottom: 16 },
-  volRow:          { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  label:           { color: '#9ca3af', fontSize: 14 },
-  volPct:          { color: '#9ca3af', fontSize: 12, width: 36, textAlign: 'right' },
-  spotifySection:  { marginTop: 24, borderTopWidth: 1, borderTopColor: '#1f2937', paddingTop: 16 },
-  catHeader:       { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 12 },
-  tile:            { backgroundColor: '#1f2937', borderRadius: 8, padding: 14, marginBottom: 8 },
-  tileText:        { color: '#fff', fontSize: 14, fontWeight: '500' },
-  spotifyControls: { flexDirection: 'row', gap: 12, marginVertical: 12 },
-  ctrlBtn:         { backgroundColor: '#1db954', padding: 12, borderRadius: 24, width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  ctrlIcon:        { fontSize: 20 },
-  trackInfo:       { color: '#1db954', fontSize: 13, marginBottom: 8 },
-  spotifyNote:     { color: '#6b7280', fontSize: 11, lineHeight: 16, marginTop: 4 },
+  container:      { flex: 1, backgroundColor: C.bg },
+  content:        { padding: 16, paddingBottom: 40 },
+  heading:        { fontSize: 26, fontWeight: '800', color: C.white, letterSpacing: 0.3, marginBottom: 4 },
+  subheading:     { color: C.muted, fontSize: 12, marginBottom: 20, letterSpacing: 0.3 },
+  card:           {
+    backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
+    borderRadius: 12, padding: 14, marginBottom: 16,
+  },
+  volRow:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  label:          { color: C.dim, fontSize: 14, fontWeight: '500' },
+  volPct:         { color: C.accent, fontSize: 14, fontWeight: '700' },
+  spotifyCard:    {
+    backgroundColor: '#0d1f12', borderWidth: 1, borderColor: '#1a3322',
+    borderRadius: 12, padding: 16, marginTop: 8,
+  },
+  spotifyHeader:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  spotifyLogo:    { fontSize: 20 },
+  spotifyTitle:   { color: C.white, fontSize: 18, fontWeight: '700', flex: 1 },
+  connectedBadge: { backgroundColor: '#052e16', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12, borderWidth: 1, borderColor: C.spotify },
+  connectedText:  { color: C.spotify, fontSize: 11, fontWeight: '700' },
+  spotifyBtn:     {
+    backgroundColor: C.spotify, borderRadius: 10,
+    padding: 14, alignItems: 'center',
+  },
+  spotifyBtnText: { color: '#000', fontWeight: '800', fontSize: 14 },
+  playerWrap:     { gap: 12 },
+  trackWrap:      { backgroundColor: '#0a1a0f', borderRadius: 8, padding: 10 },
+  trackName:      { color: C.white, fontWeight: '700', fontSize: 15 },
+  trackArtist:    { color: C.spotify, fontSize: 12, marginTop: 2 },
+  controls:       { flexDirection: 'row', gap: 12, justifyContent: 'center' },
+  ctrlBtn:        {
+    backgroundColor: '#1a3322', padding: 14, borderRadius: 30,
+    width: 52, height: 52, alignItems: 'center', justifyContent: 'center',
+  },
+  ctrlBtnMain:    {
+    backgroundColor: C.spotify, padding: 14, borderRadius: 30,
+    width: 56, height: 56, alignItems: 'center', justifyContent: 'center',
+  },
+  ctrlIcon:       { fontSize: 18, color: C.white },
+  spotifyNote:    { color: C.muted, fontSize: 11, lineHeight: 16, textAlign: 'center' },
 });
