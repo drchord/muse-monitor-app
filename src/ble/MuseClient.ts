@@ -21,7 +21,20 @@ export class MuseClient {
   onGyro:    MotionCallback  = () => {};
   onBattery: BatteryCallback = () => {};
 
+  private async _waitForPoweredOn(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const sub = this.manager.onStateChange(state => {
+        if (state === 'PoweredOn')  { sub.remove(); resolve(); }
+        if (state === 'PoweredOff' || state === 'Unauthorized' || state === 'Unsupported') {
+          sub.remove();
+          reject(new Error(`Bluetooth unavailable: ${state}`));
+        }
+      }, true);
+    });
+  }
+
   async scan(timeoutMs = 10000): Promise<Device[]> {
+    await this._waitForPoweredOn();
     return new Promise((resolve, reject) => {
       const found: Device[] = [];
       const timer = setTimeout(() => {
@@ -39,7 +52,8 @@ export class MuseClient {
   }
 
   async connect(deviceId: string): Promise<void> {
-    this.device = await this.manager.connectToDevice(deviceId);
+    this.manager.stopDeviceScan();
+    this.device = await this.manager.connectToDevice(deviceId, { timeout: 15000 });
     await this.device.discoverAllServicesAndCharacteristics();
     await this._sendCommand(CMD_PRESET21);
     await this._sendCommand(CMD_START);
@@ -59,7 +73,7 @@ export class MuseClient {
   private async _sendCommand(cmd: readonly number[]): Promise<void> {
     if (!this.device) return;
     const b64 = Buffer.from(cmd as number[]).toString('base64');
-    await this.device.writeCharacteristicWithResponseForService(
+    await this.device.writeCharacteristicWithoutResponseForService(
       MUSE_SERVICE_UUID, CTRL_CHAR_UUID, b64
     );
   }
