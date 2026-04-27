@@ -3,7 +3,7 @@ import { Buffer } from 'buffer';
 import {
   MUSE_SERVICE_UUID, CTRL_CHAR_UUID, EEG_CHAR_UUID,
   ACC_CHAR_UUID, GYRO_CHAR_UUID, BATT_CHAR_UUID,
-  CMD_PRESET21, CMD_START, CMD_STOP, CMD_KEEPALIVE,
+  CMD_CONTROL, CMD_PRESET21, CMD_START, CMD_STOP, CMD_KEEPALIVE,
 } from './constants';
 import { parseEEGPacket, RawEEGPacket } from './EEGParser';
 
@@ -63,12 +63,17 @@ export class MuseClient {
     this.device = await this.manager.connectToDevice(deviceId, { timeout: 15000 });
     this.onStatus('Discovering services…');
     await this.device.discoverAllServicesAndCharacteristics();
-    this.onStatus('Sending preset…');
-    await this._sendCommand(CMD_PRESET21);
-    this.onStatus('Starting EEG stream…');
-    await this._sendCommand(CMD_START);
     this.onStatus('Subscribing to data…');
     await this._subscribeAll();
+    await new Promise(r => setTimeout(r, 500));
+    this.onStatus('Taking control…');
+    await this._sendCommand(CMD_CONTROL);
+    await new Promise(r => setTimeout(r, 300));
+    this.onStatus('Sending preset…');
+    await this._sendCommand(CMD_PRESET21);
+    await new Promise(r => setTimeout(r, 300));
+    this.onStatus('Starting EEG stream…');
+    await this._sendCommand(CMD_START);
     this.keepaliveTimer = setInterval(() => this._sendCommand(CMD_KEEPALIVE), 5000);
   }
 

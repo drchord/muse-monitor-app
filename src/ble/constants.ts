@@ -12,6 +12,7 @@ export const PPG_CHAR_UUIDS    = [
 
 export const SCALE_FACTOR_EEG = 0.48828125;
 
+export const CMD_CONTROL   = [0x02, 0x63, 0x0a]              as const;
 export const CMD_PRESET21  = [0x04, 0x70, 0x32, 0x31, 0x0a] as const;
 export const CMD_START     = [0x02, 0x73, 0x0a]              as const;
 export const CMD_STOP      = [0x02, 0x64, 0x0a]              as const;
