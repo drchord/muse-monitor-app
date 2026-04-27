@@ -84,7 +84,7 @@ export class MuseClient {
   private async _sendCommand(cmd: readonly number[]): Promise<void> {
     if (!this.device) return;
     const b64 = Buffer.from(cmd as number[]).toString('base64');
-    await this.device.writeCharacteristicWithoutResponseForService(
+    await this.device.writeCharacteristicWithResponseForService(
       MUSE_SERVICE_UUID, CTRL_CHAR_UUID, b64
     );
   }
