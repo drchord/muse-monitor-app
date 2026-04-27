@@ -16,11 +16,21 @@
         "buildConfiguration": "Release"
       }
     },
+    "testflight": {
+      "distribution": "store",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "autoIncrement": true
+    },
     "production": {
       "autoIncrement": true
     }
   },
   "submit": {
+    "testflight": {
+      "ios": {}
+    },
     "production": {}
   }
 }
