@@ -1,6 +1,6 @@
 import { MuseClient } from './MuseClient';
 import { FFTProcessor } from '../dsp/FFTProcessor';
-import { extractBandPowers, bandPowerToOscArgs } from '../dsp/BandPower';
+import { bandPowersFromPSD, bandPowerToOscArgs } from '../dsp/BandPower';
 import { OscSender } from '../osc/OscSender';
 import { useMuseStore } from '../store/museStore';
 import type { BandName } from './constants';
@@ -30,8 +30,8 @@ export function attachPipeline(client: MuseClient, sender: OscSender): void {
       samplesSinceUpdate = 0;
 
       const bandPowersPerCh = processors.map(p => {
-        p.pushSamples([]); // trigger PSD without new samples
-        return extractBandPowers(new Float32Array(256), SAMPLE_RATE);
+        const { freqs, power } = p.getPSD();
+        return bandPowersFromPSD(freqs, power);
       });
 
       const bandPowerArrays = bandPowerToOscArgs(bandPowersPerCh);

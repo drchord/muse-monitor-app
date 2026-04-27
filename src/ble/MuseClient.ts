@@ -42,9 +42,11 @@ export class MuseClient {
         resolve(found);
       }, timeoutMs);
 
+      const seen = new Set<string>();
       this.manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
         if (error) { clearTimeout(timer); reject(error); return; }
-        if (device?.name?.toLowerCase().includes('muse')) {
+        if (device?.name?.toLowerCase().includes('muse') && !seen.has(device.id)) {
+          seen.add(device.id);
           found.push(device);
         }
       });
@@ -53,6 +55,7 @@ export class MuseClient {
 
   async connect(deviceId: string): Promise<void> {
     this.manager.stopDeviceScan();
+    try { await this.manager.cancelDeviceConnection(deviceId); } catch {}
     this.device = await this.manager.connectToDevice(deviceId, { timeout: 15000 });
     await this.device.discoverAllServicesAndCharacteristics();
     await this._sendCommand(CMD_PRESET21);
