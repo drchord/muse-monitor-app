@@ -53,13 +53,21 @@ export class MuseClient {
     });
   }
 
+  onStatus: (msg: string) => void = () => {};
+
   async connect(deviceId: string): Promise<void> {
     this.manager.stopDeviceScan();
+    this.onStatus('Cancelling previous connection…');
     try { await this.manager.cancelDeviceConnection(deviceId); } catch {}
+    this.onStatus('Connecting to device…');
     this.device = await this.manager.connectToDevice(deviceId, { timeout: 15000 });
+    this.onStatus('Discovering services…');
     await this.device.discoverAllServicesAndCharacteristics();
+    this.onStatus('Sending preset…');
     await this._sendCommand(CMD_PRESET21);
+    this.onStatus('Starting EEG stream…');
     await this._sendCommand(CMD_START);
+    this.onStatus('Subscribing to data…');
     await this._subscribeAll();
     this.keepaliveTimer = setInterval(() => this._sendCommand(CMD_KEEPALIVE), 5000);
   }

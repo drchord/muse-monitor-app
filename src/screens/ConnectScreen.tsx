@@ -57,6 +57,7 @@ export function ConnectScreen({ navigation }: any) {
 
   const connectTo = async (device: Device) => {
     setStatus(`Connecting to ${device.name}...`);
+    client.onStatus = setStatus;
     try {
       sender.open();
       await client.connect(device.id);
