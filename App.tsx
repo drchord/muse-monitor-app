@@ -17,7 +17,7 @@ export default function App() {
         screenOptions={{
           headerStyle:     { backgroundColor: '#0f172a' },
           headerTintColor: '#f1f5f9',
-          headerTitleStyle: { fontWeight: '700', letterSpacing: 0.3 },
+          headerTitleStyle: { fontWeight: '700' },
         }}
       >
         <Stack.Screen name="Connect"    component={ConnectScreen}    options={{ title: 'Muse Plus' }} />
