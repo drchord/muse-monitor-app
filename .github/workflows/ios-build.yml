@@ -61,8 +61,7 @@ jobs:
             -authenticationKeyIssuerID 620b8c6b-545b-4fb4-8b7f-4b527a671243 \
             -authenticationKeyPath $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8 \
             CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=YZN764NT86 \
-            | xcpretty --simple --color
+            DEVELOPMENT_TEAM=YZN764NT86
 
       - name: Export IPA
         run: |
