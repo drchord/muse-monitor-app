@@ -3,17 +3,15 @@
 <plist version="1.0">
 <dict>
   <key>method</key>
-  <string>ad-hoc</string>
+  <string>app-store</string>
   <key>teamID</key>
   <string>YZN764NT86</string>
   <key>compileBitcode</key>
   <false/>
-  <key>thinning</key>
-  <string>&lt;none&gt;</string>
   <key>provisioningProfiles</key>
   <dict>
     <key>org.name.musemonitorapp</key>
-    <string>bd1ff32d-68d9-43e5-b8d0-29318661d593</string>
+    <string>1f724b01-e603-4f51-8162-e63b5844daf9</string>
   </dict>
 </dict>
 </plist>
