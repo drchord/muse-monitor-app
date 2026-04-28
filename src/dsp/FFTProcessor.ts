@@ -10,6 +10,11 @@ export class FFTProcessor {
     this.buffer = new Float32Array(FFT_SIZE);
   }
 
+  reset(): void {
+    this.buffer.fill(0);
+    this.bufferIdx = 0;
+  }
+
   pushSamples(samples: number[]): void {
     for (const s of samples) {
       this.buffer[this.bufferIdx % FFT_SIZE] = s;

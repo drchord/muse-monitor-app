@@ -49,6 +49,7 @@
     },
     "owner": "drsugato",
     "plugins": [
+      "expo-av",
       "expo-sqlite"
     ]
   }

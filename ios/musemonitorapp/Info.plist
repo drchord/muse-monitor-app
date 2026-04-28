@@ -55,5 +55,10 @@
 	<string>Muse Plus needs Bluetooth to connect to your Muse headband and stream EEG data.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Muse Plus needs Bluetooth to connect to your Muse headband and stream EEG data.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

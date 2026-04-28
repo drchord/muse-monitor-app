@@ -16,6 +16,7 @@ let samplesSinceUpdate = 0;
 
 export function attachPipeline(client: MuseClient, sender: OscSender): void {
   samplesSinceUpdate = 0;
+  processors.forEach(p => p.reset());
 
   client.onEEG = (ch, packet) => {
     // Each EEG characteristic (273e0013-0016) sends 12 samples from ONE electrode.

@@ -28,30 +28,37 @@ export class SoundscapePlayer {
   private sound:      any    = null;
   private currentKey: string | null = null;
   private volume:     number = 0.5;
+  private _busy:      boolean = false;
 
   async play(key: string): Promise<void> {
     const entry = SOUNDSCAPE_CATALOG[key];
     if (!entry) throw new Error(`Unknown soundscape: ${key}`);
     if (this.currentKey === key) return;
+    if (this._busy) return;
+    this._busy = true;
 
-    await this._fadeOut();
-    if (this.sound) { await this.sound.unloadAsync(); this.sound = null; }
+    try {
+      await this._fadeOut();
+      if (this.sound) { await this.sound.unloadAsync(); this.sound = null; }
 
-    const { Audio } = await import('expo-av');
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS:     true,
-      staysActiveInBackground:  true,
-      shouldDuckAndroid:        true,
-    });
-    const { sound } = await Audio.Sound.createAsync(entry.asset, {
-      isLooping:      true,
-      volume:         0,
-      shouldPlay:     true,
-      positionMillis: 0,
-    });
-    this.sound      = sound;
-    this.currentKey = key;
-    await this._fadeIn();
+      const { Audio } = await import('expo-av');
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS:     true,
+        staysActiveInBackground:  true,
+        shouldDuckAndroid:        true,
+      });
+      const { sound } = await Audio.Sound.createAsync(entry.asset, {
+        isLooping:      true,
+        volume:         0,
+        shouldPlay:     true,
+        positionMillis: 0,
+      });
+      this.sound      = sound;
+      this.currentKey = key;
+      await this._fadeIn();
+    } finally {
+      this._busy = false;
+    }
   }
 
   async stop(): Promise<void> {

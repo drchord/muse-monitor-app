@@ -41,18 +41,27 @@ export function ConnectScreen({ navigation }: any) {
 
   const ringOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.4] });
 
+  useEffect(() => {
+    return () => { client.disconnect().catch(() => {}); };
+  }, []);
+
   const startScan = async () => {
     setScanning(true);
     setDevices([]);
     setStatus('Scanning for Muse headband...');
-    const found = await client.scan(8000);
-    setDevices(found);
-    setScanning(false);
-    setStatus(
-      found.length === 0
-        ? 'No devices found. Is Muse powered on?'
-        : `Found ${found.length} device${found.length > 1 ? 's' : ''}`
-    );
+    try {
+      const found = await client.scan(8000);
+      setDevices(found);
+      setStatus(
+        found.length === 0
+          ? 'No devices found. Is Muse powered on?'
+          : `Found ${found.length} device${found.length > 1 ? 's' : ''}`
+      );
+    } catch (e: any) {
+      setStatus(`Scan failed: ${e.message}`);
+    } finally {
+      setScanning(false);
+    }
   };
 
   const connectTo = async (device: Device) => {
