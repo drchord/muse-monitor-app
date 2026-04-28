@@ -90,6 +90,15 @@ export class SoundscapePlayer {
     await this.sound?.setVolumeAsync(this.volume);
   }
 
+  async release(): Promise<void> {
+    this._busy = false;
+    if (this.sound) {
+      try { await this.sound.unloadAsync(); } catch {}
+      this.sound = null;
+    }
+    this.currentKey = null;
+  }
+
   getCurrentKey(): string | null { return this.currentKey; }
 
   private _fadeIn(steps = 20, ms = 500): Promise<void> {

@@ -17,15 +17,14 @@ export function SoundscapeScreen() {
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [trackInfo,        setTrackInfo]        = useState<TrackInfo | null>(null);
 
-  // Unload audio when screen unmounts — releases AVAudioPlayer resources
   useEffect(() => {
-    return () => { player.stop().catch(() => {}); };
+    return () => { player.release().catch(() => {}); };
   }, []);
 
   const handleSelect = async (key: string) => {
     try {
       await player.play(key);
-      setActiveKey(key);
+      setActiveKey(player.getCurrentKey());
     } catch (e) {
       console.error('[Soundscape] play failed:', e);
     }

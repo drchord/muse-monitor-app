@@ -20,9 +20,10 @@ export function ConnectScreen({ navigation }: any) {
   const client = clientRef.current;
   const sender = senderRef.current;
 
-  const [scanning,  setScanning]  = useState(false);
-  const [devices,   setDevices]   = useState<Device[]>([]);
-  const [status,    setStatus]    = useState('');
+  const [scanning,    setScanning]    = useState(false);
+  const [connecting,  setConnecting]  = useState(false);
+  const [devices,     setDevices]     = useState<Device[]>([]);
+  const [status,      setStatus]      = useState('');
   const setConnected  = useMuseStore(s => s.setConnected);
   const signalQuality = useMuseStore(s => s.signalQuality);
 
@@ -72,6 +73,8 @@ export function ConnectScreen({ navigation }: any) {
   };
 
   const connectTo = async (device: Device) => {
+    if (connecting) return;
+    setConnecting(true);
     setStatus(`Connecting to ${device.name}...`);
     client.onStatus = setStatus;
     try {
@@ -81,8 +84,10 @@ export function ConnectScreen({ navigation }: any) {
       attachPipeline(client, sender);
       navigation.navigate('Dashboard');
     } catch (e: any) {
-      sender.close(); // release UDP socket on failure
+      sender.close();
       setStatus(`Connection failed: ${e.message}`);
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -120,7 +125,7 @@ export function ConnectScreen({ navigation }: any) {
         keyExtractor={d => d.id}
         style={styles.list}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.deviceCard} onPress={() => connectTo(item)}>
+          <TouchableOpacity style={styles.deviceCard} onPress={() => connectTo(item)} disabled={connecting}>
             <View style={styles.deviceLeft}>
               <Text style={styles.deviceIcon}>📡</Text>
               <View>

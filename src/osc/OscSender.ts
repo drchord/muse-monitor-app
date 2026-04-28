@@ -60,6 +60,8 @@ export class OscSender {
 
   private _send(data: Uint8Array): void {
     if (!this.socket) return;
-    this.socket.send(Buffer.from(data), 0, data.length, this.port, this.host);
+    this.socket.send(Buffer.from(data), 0, data.length, this.port, this.host, (err) => {
+      if (err) console.warn('[OSC] send error:', err.message);
+    });
   }
 }

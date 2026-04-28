@@ -29,6 +29,7 @@ export function DashboardScreen({ navigation }: any) {
   const bandPowers    = useMuseStore(s => s.bandPowers);
   const signalQuality = useMuseStore(s => s.signalQuality);
   const batteryPct    = useMuseStore(s => s.batteryPct);
+  const connected     = useMuseStore(s => s.connected);
   const oscConfig     = useMuseStore(s => s.oscConfig);
   const setOscConfig  = useMuseStore(s => s.setOscConfig);
 
@@ -40,6 +41,13 @@ export function DashboardScreen({ navigation }: any) {
     audioFeedback.load().catch(() => {});
     return () => { audioFeedback.unload(); };
   }, []);
+
+  useEffect(() => {
+    transitionDetector.reset();
+    setHistory(emptyHistory());
+    setDepthScore(0);
+    setInState(false);
+  }, [connected]);
 
   useEffect(() => {
     if (!bandPowers) return;
