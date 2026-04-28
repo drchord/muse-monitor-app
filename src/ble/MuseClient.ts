@@ -29,7 +29,7 @@ import { Buffer } from 'buffer';
 import {
   MUSE_SERVICE_UUID,
   CTRL_CHAR_UUID,
-  EEG_CHAR_UUID,
+  EEG_CHAR_UUIDS,
   ACC_CHAR_UUID,
   GYRO_CHAR_UUID,
   BATT_CHAR_UUID,
@@ -40,7 +40,7 @@ import {
 } from './constants';
 import { parseEEGPacket, RawEEGPacket } from './EEGParser';
 
-export type EEGCallback     = (packet: RawEEGPacket) => void;
+export type EEGCallback     = (ch: number, packet: RawEEGPacket) => void;
 export type MotionCallback  = (x: number, y: number, z: number) => void;
 export type BatteryCallback = (pct: number) => void;
 
@@ -192,16 +192,18 @@ export class MuseClient {
       (_err, _char) => { /* control messages received here if needed */ },
     );
 
-    // EEG — four electrodes packed in one characteristic (273e0013)
-    this.device.monitorCharacteristicForService(
-      MUSE_SERVICE_UUID,
-      EEG_CHAR_UUID,
-      (err, char) => {
-        if (err || !char?.value) return;
-        const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
-        try { this.onEEG(parseEEGPacket(bytes)); } catch {}
-      },
-    );
+    // EEG — Muse S sends one characteristic per electrode (TP9=0013, AF7=0014, AF8=0015, TP10=0016)
+    EEG_CHAR_UUIDS.forEach((uuid, ch) => {
+      this.device!.monitorCharacteristicForService(
+        MUSE_SERVICE_UUID,
+        uuid,
+        (err, char) => {
+          if (err || !char?.value) return;
+          const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+          try { this.onEEG(ch, parseEEGPacket(bytes)); } catch {}
+        },
+      );
+    });
 
     // Battery / telemetry (273e000b)
     this.device.monitorCharacteristicForService(

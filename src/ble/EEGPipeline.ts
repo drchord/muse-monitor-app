@@ -17,14 +17,13 @@ let samplesSinceUpdate = 0;
 export function attachPipeline(client: MuseClient, sender: OscSender): void {
   samplesSinceUpdate = 0;
 
-  client.onEEG = (packet) => {
-    // Muse S interleaves 4 channels per packet (12 samples total, 3 per channel)
-    // Channel order: TP9=0, AF7=1, AF8=2, TP10=3 (verify on device during integration test)
-    for (let i = 0; i < packet.samples.length; i++) {
-      const ch = i % 4;
-      if (ch < 4) processors[ch].pushSamples([packet.samples[i]]);
-    }
-    samplesSinceUpdate += packet.samples.length / 4;
+  client.onEEG = (ch, packet) => {
+    // Each EEG characteristic (273e0013-0016) sends 12 samples from ONE electrode.
+    // Route all 12 directly to the corresponding processor.
+    // Channel 0 (TP9) drives the update clock; all 4 channels are synchronized.
+    processors[ch].pushSamples(packet.samples);
+    if (ch !== 0) return;
+    samplesSinceUpdate += packet.samples.length; // 12 per ch0 packet
 
     if (samplesSinceUpdate >= SAMPLES_PER_UPDATE) {
       samplesSinceUpdate = 0;

@@ -18,13 +18,21 @@ export function SoundscapeScreen() {
   const [trackInfo,        setTrackInfo]        = useState<TrackInfo | null>(null);
 
   const handleSelect = async (key: string) => {
-    await player.play(key);
-    setActiveKey(key);
+    try {
+      await player.play(key);
+      setActiveKey(key);
+    } catch (e) {
+      console.error('[Soundscape] play failed:', e);
+    }
   };
 
   const handleStop = async () => {
-    await player.stop();
-    setActiveKey(null);
+    try {
+      await player.stop();
+      setActiveKey(null);
+    } catch (e) {
+      console.error('[Soundscape] stop failed:', e);
+    }
   };
 
   const handleVolume = async (v: number) => {

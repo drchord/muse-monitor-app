@@ -38,6 +38,11 @@ export class SoundscapePlayer {
     if (this.sound) { await this.sound.unloadAsync(); this.sound = null; }
 
     const { Audio } = await import('expo-av');
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS:     true,
+      staysActiveInBackground:  true,
+      shouldDuckAndroid:        true,
+    });
     const { sound } = await Audio.Sound.createAsync(entry.asset, {
       isLooping:      true,
       volume:         0,
