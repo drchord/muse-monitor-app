@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>ad-hoc</string>
+  <key>teamID</key>
+  <string>YZN764NT86</string>
+  <key>compileBitcode</key>
+  <false/>
+  <key>thinning</key>
+  <string>&lt;none&gt;</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>org.name.musemonitorapp</key>
+    <string>bd1ff32d-68d9-43e5-b8d0-29318661d593</string>
+  </dict>
+</dict>
+</plist>
