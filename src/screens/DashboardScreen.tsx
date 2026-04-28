@@ -6,10 +6,12 @@ import { NeurofeedbackGauge } from '../components/NeurofeedbackGauge';
 import { SignalDots } from '../components/SignalDots';
 import type { BandName } from '../ble/constants';
 import { AudioFeedback, StateTransitionDetector } from '../audio/AudioFeedback';
+import { ArtifactDetector } from '../ble/ArtifactDetector';
 import { C } from '../theme';
 
 const audioFeedback = new AudioFeedback();
 const transitionDetector = new StateTransitionDetector(60);
+const artifactDetector = new ArtifactDetector();
 
 const HISTORY_MAX = 300;
 type BandHistory = Record<BandName, number[]>;
@@ -30,6 +32,9 @@ export function DashboardScreen({ navigation }: any) {
   const signalQuality = useMuseStore(s => s.signalQuality);
   const batteryPct    = useMuseStore(s => s.batteryPct);
   const connected     = useMuseStore(s => s.connected);
+  const blink         = useMuseStore(s => s.blink);
+  const jawClench     = useMuseStore(s => s.jawClench);
+  const setArtifacts  = useMuseStore(s => s.setArtifacts);
   const oscConfig     = useMuseStore(s => s.oscConfig);
   const setOscConfig  = useMuseStore(s => s.setOscConfig);
 
@@ -44,6 +49,7 @@ export function DashboardScreen({ navigation }: any) {
 
   useEffect(() => {
     transitionDetector.reset();
+    artifactDetector.reset();
     setHistory(emptyHistory());
     setDepthScore(0);
     setInState(false);
@@ -76,6 +82,12 @@ export function DashboardScreen({ navigation }: any) {
     const transition = transitionDetector.update(score);
     if (transition === 'enter') audioFeedback.playReward();
     if (transition === 'drift')  audioFeedback.playDrift();
+
+    const { blink: blinkNow, jawClench: jawNow } = artifactDetector.update(bandPowers);
+    if (blinkNow || jawNow) {
+      setArtifacts(blinkNow, jawNow);
+      setTimeout(() => setArtifacts(false, false), 800);
+    }
   }, [bandPowers]);
 
   return (
@@ -85,6 +97,14 @@ export function DashboardScreen({ navigation }: any) {
         <Text style={styles.stateDot}>{inState ? '●' : '○'}</Text>
         <Text style={styles.stateText}>{inState ? 'IN FLOW STATE' : 'TRACKING…'}</Text>
       </View>
+
+      {/* Artifact badges */}
+      {(blink || jawClench) && (
+        <View style={styles.artifactRow}>
+          {blink     && <View style={styles.artifactBadge}><Text style={styles.artifactText}>👁 BLINK</Text></View>}
+          {jawClench && <View style={styles.artifactBadge}><Text style={styles.artifactText}>😬 JAW</Text></View>}
+        </View>
+      )}
 
       {/* Gauge + info */}
       <View style={styles.topRow}>
@@ -166,4 +186,10 @@ const styles = StyleSheet.create({
   },
   oscRow:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   oscInfo:         { color: C.muted, fontSize: 12 },
+  artifactRow:     { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 8 },
+  artifactBadge:   {
+    backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: C.amber,
+    paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12,
+  },
+  artifactText:    { color: C.amber, fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
 });
