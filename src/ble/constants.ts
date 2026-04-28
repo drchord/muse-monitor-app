@@ -12,11 +12,19 @@ export const PPG_CHAR_UUIDS    = [
 
 export const SCALE_FACTOR_EEG = 0.48828125;
 
-export const CMD_CONTROL   = [0x02, 0x63, 0x0a]              as const;
-export const CMD_PRESET21  = [0x04, 0x70, 0x32, 0x31, 0x0a] as const;
-export const CMD_START     = [0x02, 0x73, 0x0a]              as const;
-export const CMD_STOP      = [0x02, 0x64, 0x0a]              as const;
-export const CMD_KEEPALIVE = [0x02, 0x68, 0x0a]              as const;
+// Commands derived from muselsl muse.py (alexandrebarachant/muse-lsl)
+// All use _write_cmd_str format: [len+1, ...ascii_bytes, 0x0a]
+// muselsl always writes WITHOUT response (wait_for_response=False)
+export const CMD_PRESET21  = [0x04, 0x70, 0x32, 0x31, 0x0a] as const; // 'p21\n' — select preset
+export const CMD_RESUME    = [0x02, 0x64, 0x0a]              as const; // 'd\n'   — start/resume stream
+export const CMD_STOP      = [0x02, 0x68, 0x0a]              as const; // 'h\n'   — halt/stop stream
+export const CMD_KEEPALIVE = [0x02, 0x6b, 0x0a]              as const; // 'k\n'   — keepalive
+
+// Aliases kept for callers that may reference old names
+/** @deprecated use CMD_RESUME */
+export const CMD_START = CMD_RESUME;
+/** @deprecated CMD_CONTROL ('c') not used by muselsl; use CMD_PRESET21 then CMD_RESUME */
+export const CMD_CONTROL = CMD_PRESET21;
 
 export const BAND_RANGES = {
   delta: [0.5, 4]   as [number, number],
