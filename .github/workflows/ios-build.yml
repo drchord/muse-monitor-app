@@ -40,42 +40,6 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: \
             -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
 
-      - name: Install App Store provisioning profile
-        env:
-          APPSTORE_PROVISIONING_PROFILE: ${{ secrets.APPSTORE_PROVISIONING_PROFILE }}
-        run: |
-          PP_PATH=$RUNNER_TEMP/appstore_profile.mobileprovision
-          echo "$APPSTORE_PROVISIONING_PROFILE" | base64 --decode > "$PP_PATH"
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          UUID=$(security cms -D -i "$PP_PATH" | plutil -extract UUID xml1 -o - - | \
-            sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
-          echo "Installed App Store profile: $UUID"
-
-      - name: Archive
-        run: |
-          set -o pipefail
-          xcodebuild archive \
-            -workspace ios/musemonitorapp.xcworkspace \
-            -scheme musemonitorapp \
-            -configuration Release \
-            -archivePath $RUNNER_TEMP/MusePlus.xcarchive \
-            -destination "generic/platform=iOS" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="1f724b01-e603-4f51-8162-e63b5844daf9" \
-            DEVELOPMENT_TEAM=YZN764NT86 \
-            | xcpretty --simple --color
-
-      - name: Export IPA
-        run: |
-          set -o pipefail
-          xcodebuild -exportArchive \
-            -archivePath $RUNNER_TEMP/MusePlus.xcarchive \
-            -exportPath $RUNNER_TEMP/ipa \
-            -exportOptionsPlist ios/ExportOptions.plist
-          ls -la $RUNNER_TEMP/ipa/
-
       - name: Setup ASC API key
         env:
           ASC_API_KEY: ${{ secrets.ASC_API_KEY }}
@@ -83,6 +47,34 @@ jobs:
           mkdir -p $RUNNER_TEMP/private_keys
           echo "$ASC_API_KEY" > $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8
           chmod 600 $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8
+
+      - name: Archive
+        run: |
+          xcodebuild archive \
+            -workspace ios/musemonitorapp.xcworkspace \
+            -scheme musemonitorapp \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/MusePlus.xcarchive \
+            -destination "generic/platform=iOS" \
+            -allowProvisioningUpdates \
+            -authenticationKeyID 9V47M72GKG \
+            -authenticationKeyIssuerID 620b8c6b-545b-4fb4-8b7f-4b527a671243 \
+            -authenticationKeyPath $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8 \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=YZN764NT86 \
+            | xcpretty --simple --color
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/MusePlus.xcarchive \
+            -exportPath $RUNNER_TEMP/ipa \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyID 9V47M72GKG \
+            -authenticationKeyIssuerID 620b8c6b-545b-4fb4-8b7f-4b527a671243 \
+            -authenticationKeyPath $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8
+          ls -la $RUNNER_TEMP/ipa/
 
       - name: Upload to TestFlight
         run: |
@@ -95,4 +87,4 @@ jobs:
             --apiIssuer 620b8c6b-545b-4fb4-8b7f-4b527a671243 \
             --private-key-path $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8 \
             --verbose
-          echo "Uploaded to TestFlight successfully"
+          echo "Uploaded to TestFlight"

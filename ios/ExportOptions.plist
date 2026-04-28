@@ -6,12 +6,9 @@
   <string>app-store</string>
   <key>teamID</key>
   <string>YZN764NT86</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
   <key>compileBitcode</key>
   <false/>
-  <key>provisioningProfiles</key>
-  <dict>
-    <key>org.name.musemonitorapp</key>
-    <string>1f724b01-e603-4f51-8162-e63b5844daf9</string>
-  </dict>
 </dict>
 </plist>
