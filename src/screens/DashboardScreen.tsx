@@ -56,10 +56,13 @@ export function DashboardScreen({ navigation }: any) {
       const vals = bandPowers[b];
       return vals.reduce((a, x) => a + x, 0) / vals.length;
     };
-    const target = avgBand('theta') + avgBand('delta');
-    const total  = (['delta','theta','alpha','beta','gamma'] as BandName[])
-      .reduce((s, b) => s + Math.pow(10, avgBand(b)), 0);
-    const score  = Math.min(100, Math.round(Math.pow(10, target) / total * 100));
+    // Theta+alpha relative power vs beta+gamma — standard neurofeedback relaxation index.
+    // Old formula (10^(delta+theta) / sum_all) scored alert states >60 because
+    // delta is always large regardless of mental state (artifacts, slow drift).
+    const toLin = (b: BandName) => Math.pow(10, avgBand(b));
+    const relaxNum   = toLin('theta') + toLin('alpha');
+    const relaxDenom = relaxNum + toLin('beta') + toLin('gamma');
+    const score  = Math.min(100, Math.round(relaxNum / relaxDenom * 100));
     setDepthScore(score);
     setInState(score > 60);
     const transition = transitionDetector.update(score);
