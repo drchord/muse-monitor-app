@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { SoundscapePlayer } from '../audio/SoundscapePlayer';
@@ -16,6 +16,11 @@ export function SoundscapeScreen() {
   const [volume,           setVolume]           = useState(0.5);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [trackInfo,        setTrackInfo]        = useState<TrackInfo | null>(null);
+
+  // Unload audio when screen unmounts — releases AVAudioPlayer resources
+  useEffect(() => {
+    return () => { player.stop().catch(() => {}); };
+  }, []);
 
   const handleSelect = async (key: string) => {
     try {

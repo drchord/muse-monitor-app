@@ -6,17 +6,14 @@ import { useMuseStore } from '../store/museStore';
 import type { BandName } from './constants';
 import { BAND_RANGES } from './constants';
 
-const SAMPLE_RATE       = 256;
-const UPDATE_RATE_HZ    = 10;
+const SAMPLE_RATE        = 256;
+const UPDATE_RATE_HZ     = 10;
 const SAMPLES_PER_UPDATE = SAMPLE_RATE / UPDATE_RATE_HZ; // 25.6 → flush every 26 samples
 
-// One FFT processor per electrode channel (TP9, AF7, AF8, TP10)
-const processors = [0, 1, 2, 3].map(() => new FFTProcessor(SAMPLE_RATE));
-let samplesSinceUpdate = 0;
-
 export function attachPipeline(client: MuseClient, sender: OscSender): void {
-  samplesSinceUpdate = 0;
-  processors.forEach(p => p.reset());
+  // Fresh processors per session — no cross-session buffer contamination
+  const processors = [0, 1, 2, 3].map(() => new FFTProcessor(SAMPLE_RATE));
+  let samplesSinceUpdate = 0;
 
   client.onEEG = (ch, packet) => {
     // Each EEG characteristic (273e0013-0016) sends 12 samples from ONE electrode.

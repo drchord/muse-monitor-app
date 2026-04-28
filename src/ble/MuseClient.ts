@@ -24,7 +24,7 @@
  *   e.g. 'p21\n' => [0x04, 0x70, 0x32, 0x31, 0x0a]
  */
 
-import { BleManager, Device } from 'react-native-ble-plx';
+import { BleManager, Device, Subscription } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import {
   MUSE_SERVICE_UUID,
@@ -47,7 +47,9 @@ export type BatteryCallback = (pct: number) => void;
 export class MuseClient {
   private manager   = new BleManager();
   private device:    Device | null = null;
-  private keepaliveTimer: ReturnType<typeof setInterval> | null = null;
+  private keepaliveTimer:  ReturnType<typeof setInterval> | null = null;
+  private subscriptions:   Subscription[] = [];
+  private _stateChangeSub: Subscription | null = null;
 
   onEEG:     EEGCallback     = () => {};
   onAcc:     MotionCallback  = () => {};
@@ -59,14 +61,16 @@ export class MuseClient {
 
   private async _waitForPoweredOn(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const sub = this.manager.onStateChange(state => {
-        if (state === 'PoweredOn') { sub.remove(); resolve(); }
+      this._stateChangeSub = this.manager.onStateChange(state => {
+        if (state === 'PoweredOn') {
+          this._stateChangeSub?.remove(); this._stateChangeSub = null; resolve();
+        }
         if (
           state === 'PoweredOff' ||
           state === 'Unauthorized' ||
           state === 'Unsupported'
         ) {
-          sub.remove();
+          this._stateChangeSub?.remove(); this._stateChangeSub = null;
           reject(new Error(`Bluetooth unavailable: ${state}`));
         }
       }, true);
@@ -89,7 +93,12 @@ export class MuseClient {
         null,
         { allowDuplicates: false },
         (error, device) => {
-          if (error) { clearTimeout(timer); reject(error); return; }
+          if (error) {
+            clearTimeout(timer);
+            this.manager.stopDeviceScan();
+            reject(error);
+            return;
+          }
           if (device?.name?.toLowerCase().includes('muse') && !seen.has(device.id)) {
             seen.add(device.id);
             found.push(device);
@@ -144,6 +153,14 @@ export class MuseClient {
   // ─── Disconnect ───────────────────────────────────────────────────────────
 
   async disconnect(): Promise<void> {
+    // Cancel pending BLE state subscription
+    this._stateChangeSub?.remove();
+    this._stateChangeSub = null;
+
+    // Remove all characteristic subscriptions
+    this.subscriptions.forEach(s => s.remove());
+    this.subscriptions = [];
+
     if (this.keepaliveTimer) {
       clearInterval(this.keepaliveTimer);
       this.keepaliveTimer = null;
@@ -186,66 +203,76 @@ export class MuseClient {
     if (!this.device) return;
 
     // CTRL notifications — enables the Muse to send back status/control msgs
-    this.device.monitorCharacteristicForService(
-      MUSE_SERVICE_UUID,
-      CTRL_CHAR_UUID,
-      (_err, _char) => { /* control messages received here if needed */ },
+    this.subscriptions.push(
+      this.device.monitorCharacteristicForService(
+        MUSE_SERVICE_UUID,
+        CTRL_CHAR_UUID,
+        (_err, _char) => { /* control messages received here if needed */ },
+      )
     );
 
     // EEG — Muse S sends one characteristic per electrode (TP9=0013, AF7=0014, AF8=0015, TP10=0016)
     EEG_CHAR_UUIDS.forEach((uuid, ch) => {
-      this.device!.monitorCharacteristicForService(
-        MUSE_SERVICE_UUID,
-        uuid,
-        (err, char) => {
-          if (err || !char?.value) return;
-          const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
-          try { this.onEEG(ch, parseEEGPacket(bytes)); } catch {}
-        },
+      this.subscriptions.push(
+        this.device!.monitorCharacteristicForService(
+          MUSE_SERVICE_UUID,
+          uuid,
+          (err, char) => {
+            if (err || !char?.value) return;
+            const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+            try { this.onEEG(ch, parseEEGPacket(bytes)); } catch {}
+          },
+        )
       );
     });
 
     // Battery / telemetry (273e000b)
-    this.device.monitorCharacteristicForService(
-      MUSE_SERVICE_UUID,
-      BATT_CHAR_UUID,
-      (err, char) => {
-        if (err || !char?.value) return;
-        const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
-        // bytes[1..2] = battery level in mV, /512 = percentage
-        const pct = ((bytes[1] << 8) | bytes[2]) / 512;
-        this.onBattery(Math.min(100, Math.round(pct)));
-      },
+    this.subscriptions.push(
+      this.device.monitorCharacteristicForService(
+        MUSE_SERVICE_UUID,
+        BATT_CHAR_UUID,
+        (err, char) => {
+          if (err || !char?.value) return;
+          const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+          // bytes[1..2] = battery level in mV, /512 = percentage
+          const pct = ((bytes[1] << 8) | bytes[2]) / 512;
+          this.onBattery(Math.min(100, Math.round(pct)));
+        },
+      )
     );
 
     // Accelerometer (273e000a) — MUSE_ACCELEROMETER_SCALE_FACTOR = 0.0000610352
-    this.device.monitorCharacteristicForService(
-      MUSE_SERVICE_UUID,
-      ACC_CHAR_UUID,
-      (err, char) => {
-        if (err || !char?.value) return;
-        const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
-        const view = new DataView(bytes.buffer, 2);
-        const x = view.getInt16(0, false) * 0.0000610352;
-        const y = view.getInt16(2, false) * 0.0000610352;
-        const z = view.getInt16(4, false) * 0.0000610352;
-        this.onAcc(x, y, z);
-      },
+    this.subscriptions.push(
+      this.device.monitorCharacteristicForService(
+        MUSE_SERVICE_UUID,
+        ACC_CHAR_UUID,
+        (err, char) => {
+          if (err || !char?.value) return;
+          const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+          const view = new DataView(bytes.buffer, 2);
+          const x = view.getInt16(0, false) * 0.0000610352;
+          const y = view.getInt16(2, false) * 0.0000610352;
+          const z = view.getInt16(4, false) * 0.0000610352;
+          this.onAcc(x, y, z);
+        },
+      )
     );
 
     // Gyroscope (273e0009) — MUSE_GYRO_SCALE_FACTOR = 0.0074768
-    this.device.monitorCharacteristicForService(
-      MUSE_SERVICE_UUID,
-      GYRO_CHAR_UUID,
-      (err, char) => {
-        if (err || !char?.value) return;
-        const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
-        const view = new DataView(bytes.buffer, 2);
-        const x = view.getInt16(0, false) * 0.0074768;
-        const y = view.getInt16(2, false) * 0.0074768;
-        const z = view.getInt16(4, false) * 0.0074768;
-        this.onGyro(x, y, z);
-      },
+    this.subscriptions.push(
+      this.device.monitorCharacteristicForService(
+        MUSE_SERVICE_UUID,
+        GYRO_CHAR_UUID,
+        (err, char) => {
+          if (err || !char?.value) return;
+          const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+          const view = new DataView(bytes.buffer, 2);
+          const x = view.getInt16(0, false) * 0.0074768;
+          const y = view.getInt16(2, false) * 0.0074768;
+          const z = view.getInt16(4, false) * 0.0074768;
+          this.onGyro(x, y, z);
+        },
+      )
     );
   }
 

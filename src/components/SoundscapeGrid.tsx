@@ -8,6 +8,15 @@ const CATEGORY_ICONS: Record<SoundscapeCategory, string> = {
   Noise:  '〰️',
 };
 
+// Computed once at module load — SOUNDSCAPE_CATALOG is static
+const BY_CATEGORY = Object.entries(SOUNDSCAPE_CATALOG).reduce(
+  (acc, [key, val]) => {
+    (acc[val.category] ??= []).push({ key, ...val });
+    return acc;
+  },
+  {} as Record<string, Array<{ key: string; label: string; category: SoundscapeCategory; asset: number }>>
+);
+
 interface Props {
   activeKey: string | null;
   onSelect:  (key: string) => void;
@@ -15,21 +24,13 @@ interface Props {
 }
 
 export function SoundscapeGrid({ activeKey, onSelect, onStop }: Props) {
-  const byCategory = Object.entries(SOUNDSCAPE_CATALOG).reduce(
-    (acc, [key, val]) => {
-      (acc[val.category] ??= []).push({ key, ...val });
-      return acc;
-    },
-    {} as Record<string, Array<{ key: string; label: string; category: SoundscapeCategory; asset: number }>>
-  );
-
   return (
     <View>
       {(['Nature', 'Sacred', 'Noise'] as SoundscapeCategory[]).map(cat => (
         <View key={cat}>
           <Text style={styles.catHeader}>{CATEGORY_ICONS[cat]}  {cat}</Text>
           <View style={styles.grid}>
-            {byCategory[cat]?.map(item => (
+            {BY_CATEGORY[cat]?.map(item => (
               <TouchableOpacity
                 key={item.key}
                 style={[styles.tile, activeKey === item.key && styles.tileActive]}

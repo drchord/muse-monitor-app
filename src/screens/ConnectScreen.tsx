@@ -11,10 +11,15 @@ import { attachPipeline } from '../ble/EEGPipeline';
 import { OscSender } from '../osc/OscSender';
 import { C } from '../theme';
 
-const client = new MuseClient();
-const sender = new OscSender();
-
 export function ConnectScreen({ navigation }: any) {
+  // useRef so instances persist across re-renders but are scoped to this mount
+  const clientRef = useRef<MuseClient | null>(null);
+  const senderRef = useRef<OscSender | null>(null);
+  if (!clientRef.current) clientRef.current = new MuseClient();
+  if (!senderRef.current) senderRef.current = new OscSender();
+  const client = clientRef.current;
+  const sender = senderRef.current;
+
   const [scanning,  setScanning]  = useState(false);
   const [devices,   setDevices]   = useState<Device[]>([]);
   const [status,    setStatus]    = useState('');
@@ -37,13 +42,15 @@ export function ConnectScreen({ navigation }: any) {
         Animated.timing(glow, { toValue: 0, duration: 1300, useNativeDriver: true }),
       ])
     ).start();
+
+    // Clean up BLE connection and UDP socket on unmount
+    return () => {
+      client.disconnect().catch(() => {});
+      sender.close();
+    };
   }, []);
 
   const ringOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.4] });
-
-  useEffect(() => {
-    return () => { client.disconnect().catch(() => {}); };
-  }, []);
 
   const startScan = async () => {
     setScanning(true);
@@ -68,12 +75,13 @@ export function ConnectScreen({ navigation }: any) {
     setStatus(`Connecting to ${device.name}...`);
     client.onStatus = setStatus;
     try {
-      sender.open();
+      if (!sender.isOpen()) sender.open();
       await client.connect(device.id);
       setConnected(true, device.name ?? 'Muse');
       attachPipeline(client, sender);
       navigation.navigate('Dashboard');
     } catch (e: any) {
+      sender.close(); // release UDP socket on failure
       setStatus(`Connection failed: ${e.message}`);
     }
   };

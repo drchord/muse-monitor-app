@@ -11,7 +11,7 @@ const OSC_BAND_ADDRESSES: Record<BandName, string> = {
 };
 
 export class OscSender {
-  private socket: any = null;
+  private socket: ReturnType<typeof udp.createSocket> | null = null;
   private host = '192.168.1.100';
   private port = 5000;
 
@@ -20,7 +20,10 @@ export class OscSender {
     this.port = port;
   }
 
+  isOpen(): boolean { return this.socket !== null; }
+
   open(): void {
+    if (this.socket) return; // idempotent
     this.socket = udp.createSocket({ type: 'udp4' });
     this.socket.bind(0);
   }

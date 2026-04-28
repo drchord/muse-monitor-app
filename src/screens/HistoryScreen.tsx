@@ -5,11 +5,11 @@ import { C } from '../theme';
 
 export function HistoryScreen() {
   const { sessions, loadSessions } = useSessionStore();
-  useEffect(() => { loadSessions(); }, []);
+  useEffect(() => { loadSessions(); }, [loadSessions]);
 
   const fmt = (s: number) => {
     const safe = Math.max(0, s);
-    return `${Math.floor(safe / 60)}m ${safe % 60}s`;
+    return `${Math.floor(safe / 60)}m ${Math.floor(safe % 60)}s`;
   };
 
   const scoreColor = (pct: number) =>

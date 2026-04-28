@@ -1,3 +1,5 @@
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+
 export type SoundscapeCategory = 'Nature' | 'Sacred' | 'Noise';
 
 interface SoundscapeEntry {
@@ -25,10 +27,25 @@ export const SOUNDSCAPE_CATALOG: Record<string, SoundscapeEntry> = {
 };
 
 export class SoundscapePlayer {
-  private sound:      any    = null;
-  private currentKey: string | null = null;
-  private volume:     number = 0.5;
-  private _busy:      boolean = false;
+  private sound:          any    = null;
+  private currentKey:     string | null = null;
+  private volume:         number = 0.5;
+  private _busy:          boolean = false;
+  private _audioModeSet:  boolean = false;
+
+  private async _ensureAudioMode(): Promise<void> {
+    if (this._audioModeSet) return;
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS:         false,
+      interruptionModeIOS:        InterruptionModeIOS.DoNotMix,
+      playsInSilentModeIOS:       true,
+      staysActiveInBackground:    true,
+      interruptionModeAndroid:    InterruptionModeAndroid.DoNotMix,
+      shouldDuckAndroid:          false,
+      playThroughEarpieceAndroid: false,
+    });
+    this._audioModeSet = true;
+  }
 
   async play(key: string): Promise<void> {
     const entry = SOUNDSCAPE_CATALOG[key];
@@ -38,15 +55,10 @@ export class SoundscapePlayer {
     this._busy = true;
 
     try {
+      await this._ensureAudioMode();
       await this._fadeOut();
       if (this.sound) { await this.sound.unloadAsync(); this.sound = null; }
 
-      const { Audio } = await import('expo-av');
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS:     true,
-        staysActiveInBackground:  true,
-        shouldDuckAndroid:        true,
-      });
       const { sound } = await Audio.Sound.createAsync(entry.asset, {
         isLooping:      true,
         volume:         0,
@@ -62,9 +74,15 @@ export class SoundscapePlayer {
   }
 
   async stop(): Promise<void> {
-    await this._fadeOut();
-    if (this.sound) { await this.sound.unloadAsync(); this.sound = null; }
-    this.currentKey = null;
+    if (this._busy) return;
+    this._busy = true;
+    try {
+      await this._fadeOut();
+      if (this.sound) { await this.sound.unloadAsync(); this.sound = null; }
+      this.currentKey = null;
+    } finally {
+      this._busy = false;
+    }
   }
 
   async setVolume(v: number): Promise<void> {

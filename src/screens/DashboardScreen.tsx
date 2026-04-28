@@ -25,7 +25,13 @@ function BatteryBadge({ pct }: { pct: number | null }) {
 }
 
 export function DashboardScreen({ navigation }: any) {
-  const { bandPowers, signalQuality, batteryPct, oscConfig, setOscConfig } = useMuseStore();
+  // Individual selectors — each re-renders only when its own slice changes
+  const bandPowers    = useMuseStore(s => s.bandPowers);
+  const signalQuality = useMuseStore(s => s.signalQuality);
+  const batteryPct    = useMuseStore(s => s.batteryPct);
+  const oscConfig     = useMuseStore(s => s.oscConfig);
+  const setOscConfig  = useMuseStore(s => s.setOscConfig);
+
   const [history,    setHistory]    = useState<BandHistory>(emptyHistory());
   const [depthScore, setDepthScore] = useState(0);
   const [inState,    setInState]    = useState(false);
@@ -40,13 +46,16 @@ export function DashboardScreen({ navigation }: any) {
     setHistory(prev => {
       const next = { ...prev } as BandHistory;
       for (const band of Object.keys(bandPowers) as BandName[]) {
-        const avg = bandPowers[band].reduce((a, b) => a + b, 0) / bandPowers[band].length;
+        const vals = bandPowers[band];
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
         next[band] = [...prev[band].slice(-HISTORY_MAX + 1), avg];
       }
       return next;
     });
-    const avgBand = (b: BandName) =>
-      bandPowers[b].reduce((a, x) => a + x, 0) / 4;
+    const avgBand = (b: BandName) => {
+      const vals = bandPowers[b];
+      return vals.reduce((a, x) => a + x, 0) / vals.length;
+    };
     const target = avgBand('theta') + avgBand('delta');
     const total  = (['delta','theta','alpha','beta','gamma'] as BandName[])
       .reduce((s, b) => s + Math.pow(10, avgBand(b)), 0);
