@@ -8,6 +8,7 @@ import type { BandName } from '../ble/constants';
 import { AudioFeedback, StateTransitionDetector } from '../audio/AudioFeedback';
 import { ArtifactDetector } from '../ble/ArtifactDetector';
 import { C } from '../theme';
+import type { DashboardNavProp } from '../navigation/types';
 
 const audioFeedback = new AudioFeedback();
 const transitionDetector = new StateTransitionDetector(60);
@@ -26,7 +27,7 @@ function BatteryBadge({ pct }: { pct: number | null }) {
   return <Text style={[styles.battery, { color }]}>{icon} {pct}%</Text>;
 }
 
-export function DashboardScreen({ navigation }: any) {
+export function DashboardScreen({ navigation }: { navigation: DashboardNavProp }) {
   // Individual selectors — each re-renders only when its own slice changes
   const bandPowers    = useMuseStore(s => s.bandPowers);
   const signalQuality = useMuseStore(s => s.signalQuality);

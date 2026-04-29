@@ -10,8 +10,9 @@ import { useMuseStore } from '../store/museStore';
 import { attachPipeline } from '../ble/EEGPipeline';
 import { OscSender } from '../osc/OscSender';
 import { C } from '../theme';
+import type { ConnectNavProp } from '../navigation/types';
 
-export function ConnectScreen({ navigation }: any) {
+export function ConnectScreen({ navigation }: { navigation: ConnectNavProp }) {
   // useRef so instances persist across re-renders but are scoped to this mount
   const clientRef = useRef<MuseClient | null>(null);
   const senderRef = useRef<OscSender | null>(null);

@@ -1,5 +1,7 @@
 // src/audio/AudioFeedback.ts
 
+import { Audio } from 'expo-av';
+
 export type StateTransition = 'enter' | 'drift' | null;
 
 export class StateTransitionDetector {
@@ -34,14 +36,13 @@ export class StateTransitionDetector {
 }
 
 export class AudioFeedback {
-  private rewardSound: any = null;
-  private driftSound:  any = null;
+  private rewardSound: Audio.Sound | null = null;
+  private driftSound:  Audio.Sound | null = null;
   private volume = 0.7;
   private enabled = true;
 
   async load(): Promise<void> {
     if (this.rewardSound) return; // already loaded — guard against remount leak
-    const { Audio } = await import('expo-av');
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS:    true,
       allowsRecordingIOS:      false,

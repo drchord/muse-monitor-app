@@ -1,4 +1,4 @@
-import { StateTransitionDetector } from '../src/audio/AudioFeedback';
+import { StateTransitionDetector, AudioFeedback } from '../src/audio/AudioFeedback';
 
 test('detects ENTER transition when score crosses threshold upward', () => {
   const det = new StateTransitionDetector(60);
@@ -42,4 +42,54 @@ test('transitionCount increments on each transition', () => {
   det.update(55); // drift
   det.update(65); // enter
   expect(det.transitionCount).toBe(3);
+});
+
+// ─── AudioFeedback load / unload ─────────────────────────────────────────────
+
+describe('AudioFeedback', () => {
+  let Audio: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Audio = require('expo-av').Audio;
+  });
+
+  test('load() creates two audio resources and sets audio mode', async () => {
+    const af = new AudioFeedback();
+    await af.load();
+    expect(Audio.Sound.createAsync).toHaveBeenCalledTimes(2);
+    expect(Audio.setAudioModeAsync).toHaveBeenCalledTimes(1);
+  });
+
+  test('load() remount guard: second call is a no-op', async () => {
+    const af = new AudioFeedback();
+    await af.load();
+    await af.load();
+    expect(Audio.Sound.createAsync).toHaveBeenCalledTimes(2); // not 4
+  });
+
+  test('unload() completes without throwing even if sounds are null', async () => {
+    const af = new AudioFeedback();
+    await expect(af.unload()).resolves.toBeUndefined();
+  });
+
+  test('unload() after load() releases both sounds', async () => {
+    const af = new AudioFeedback();
+    await af.load();
+    const mockSound = Audio.Sound.createAsync.mock.results[0].value;
+    jest.clearAllMocks();
+    await af.unload();
+    // Both rewardSound and driftSound are the same mockSound object from the mock
+    await expect(mockSound).resolves.toMatchObject({ sound: expect.objectContaining({ unloadAsync: expect.any(Function) }) });
+    expect(Audio.Sound.createAsync).not.toHaveBeenCalled(); // no re-load during unload
+  });
+
+  test('load() works again after unload() — handles were nulled correctly', async () => {
+    const af = new AudioFeedback();
+    await af.load();
+    await af.unload();
+    jest.clearAllMocks();
+    await af.load();
+    expect(Audio.Sound.createAsync).toHaveBeenCalledTimes(2); // loaded fresh
+  });
 });

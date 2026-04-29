@@ -7,17 +7,6 @@ const SCOPES       = [
   'playlist-read-private',
 ];
 
-// Pure-TS helper (testable in Jest — no native imports)
-export function buildSpotifyAuthUrl(clientId: string, redirectUri: string): string {
-  const params = new URLSearchParams({
-    response_type: 'token',
-    client_id:     clientId,
-    scope:         SCOPES.join(','),
-    redirect_uri:  redirectUri,
-  });
-  return `https://accounts.spotify.com/authorize?${params}`;
-}
-
 export interface TrackInfo {
   name:        string;
   artistName:  string;
@@ -93,10 +82,6 @@ export class SpotifyController {
     } catch (e) {
       console.error('Spotify skipNext failed:', e);
     }
-  }
-
-  async setVolume(_v: number): Promise<void> {
-    // SpotifyRemoteApi does not expose setVolume; no-op for now
   }
 
   async getTrack(): Promise<TrackInfo | null> {
