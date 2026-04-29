@@ -46,7 +46,7 @@ export function DashboardScreen({ navigation }: any) {
   useEffect(() => {
     audioFeedback.load().catch(() => {});
     return () => {
-      audioFeedback.unload();
+      void audioFeedback.unload().catch(() => {});
       if (artifactTimerRef.current) clearTimeout(artifactTimerRef.current);
     };
   }, []);

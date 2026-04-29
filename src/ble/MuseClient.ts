@@ -51,11 +51,12 @@ export class MuseClient {
   private subscriptions:   Subscription[] = [];
   private _stateChangeSub: Subscription | null = null;
 
-  onEEG:     EEGCallback     = () => {};
-  onAcc:     MotionCallback  = () => {};
-  onGyro:    MotionCallback  = () => {};
-  onBattery: BatteryCallback = () => {};
-  onStatus: (msg: string) => void = () => {};
+  onEEG:          EEGCallback     = () => {};
+  onAcc:          MotionCallback  = () => {};
+  onGyro:         MotionCallback  = () => {};
+  onBattery:      BatteryCallback = () => {};
+  onStatus:       (msg: string) => void = () => {};
+  onDisconnected: () => void = () => {};
 
   // ─── BLE state ────────────────────────────────────────────────────────────
 
@@ -115,37 +116,50 @@ export class MuseClient {
     try { await this.manager.cancelDeviceConnection(deviceId); } catch {}
     await this._delay(200);
 
-    this.onStatus('Connecting…');
-    this.device = await this.manager.connectToDevice(deviceId, {
-      timeout: 15000,
-      // Larger MTU helps on iOS; 247 is BLE 4.2 max over LE
-      requestMTU: 247,
-    });
+    try {
+      this.onStatus('Connecting…');
+      this.device = await this.manager.connectToDevice(deviceId, {
+        timeout: 15000,
+        // Larger MTU helps on iOS; 247 is BLE 4.2 max over LE
+        requestMTU: 247,
+      });
 
-    this.onStatus('Discovering services…');
-    await this.device.discoverAllServicesAndCharacteristics();
+      this.onStatus('Discovering services…');
+      await this.device.discoverAllServicesAndCharacteristics();
 
-    // ── Step 1: select preset BEFORE subscribing (matches muselsl order) ──
-    this.onStatus('Selecting preset p21…');
-    await this._sendCommand(CMD_PRESET21);
-    await this._delay(300);
+      // ── Step 1: select preset BEFORE subscribing (matches muselsl order) ──
+      this.onStatus('Selecting preset p21…');
+      await this._sendCommand(CMD_PRESET21);
+      await this._delay(300);
 
-    // ── Step 2: subscribe to all characteristics ───────────────────────────
-    this.onStatus('Subscribing…');
-    this._subscribeAll();
-    await this._delay(500);
+      // ── Step 2: subscribe to all characteristics ───────────────────────────
+      this.onStatus('Subscribing…');
+      this._subscribeAll();
+      await this._delay(500);
 
-    // ── Step 3: start streaming ────────────────────────────────────────────
-    this.onStatus('Starting EEG stream…');
-    await this._sendCommand(CMD_RESUME);
+      // ── Step 3: start streaming ────────────────────────────────────────────
+      this.onStatus('Starting EEG stream…');
+      await this._sendCommand(CMD_RESUME);
 
-    // ── Step 4: keepalive every 5 s ───────────────────────────────────────
-    this.keepaliveTimer = setInterval(
-      () => this._sendCommand(CMD_KEEPALIVE),
-      5000,
-    );
+      // ── Step 4: keepalive every 5 s ───────────────────────────────────────
+      this.keepaliveTimer = setInterval(() => {
+        this._sendCommand(CMD_KEEPALIVE).catch(() => {
+          if (this.keepaliveTimer) { clearInterval(this.keepaliveTimer); this.keepaliveTimer = null; }
+          this.subscriptions.forEach(s => s.remove());
+          this.subscriptions = [];
+          const dev = this.device;
+          this.device = null;
+          if (dev) { void dev.cancelConnection().catch(() => {}); }
+          this.onStatus('Disconnected');
+          this.onDisconnected();
+        });
+      }, 5000);
 
-    this.onStatus('Streaming');
+      this.onStatus('Streaming');
+    } catch (err) {
+      await this.disconnect();
+      throw err;
+    }
   }
 
   // ─── Disconnect ───────────────────────────────────────────────────────────
@@ -232,8 +246,9 @@ export class MuseClient {
         (err, char) => {
           if (err || !char?.value) return;
           const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
-          // bytes[1..2] = battery level in mV, /512 = percentage
-          const pct = ((bytes[1] << 8) | bytes[2]) / 512;
+          if (bytes.length < 4) return;
+          // bytes[0] = sequence, bytes[1] = flags, bytes[2..3] = battery level /512
+          const pct = ((bytes[2] << 8) | bytes[3]) / 512;
           this.onBattery(Math.min(100, Math.round(pct)));
         },
       )
@@ -247,6 +262,7 @@ export class MuseClient {
         (err, char) => {
           if (err || !char?.value) return;
           const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+          if (bytes.length < 8) return;
           const view = new DataView(bytes.buffer, 2);
           const x = view.getInt16(0, false) * 0.0000610352;
           const y = view.getInt16(2, false) * 0.0000610352;
@@ -264,6 +280,7 @@ export class MuseClient {
         (err, char) => {
           if (err || !char?.value) return;
           const bytes = new Uint8Array(Buffer.from(char.value, 'base64'));
+          if (bytes.length < 8) return;
           const view = new DataView(bytes.buffer, 2);
           const x = view.getInt16(0, false) * 0.0074768;
           const y = view.getInt16(2, false) * 0.0074768;

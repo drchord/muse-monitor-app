@@ -27,25 +27,32 @@ export function ConnectScreen({ navigation }: any) {
   const setConnected  = useMuseStore(s => s.setConnected);
   const signalQuality = useMuseStore(s => s.signalQuality);
 
-  const pulse = useRef(new Animated.Value(1)).current;
-  const glow  = useRef(new Animated.Value(0)).current;
+  const pulse     = useRef(new Animated.Value(1)).current;
+  const glow      = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef<Animated.CompositeAnimation | null>(null);
+  const glowAnim  = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    Animated.loop(
+    pulseAnim.current = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.22, duration: 950, useNativeDriver: true }),
         Animated.timing(pulse, { toValue: 1,    duration: 950, useNativeDriver: true }),
       ])
-    ).start();
-    Animated.loop(
+    );
+    pulseAnim.current.start();
+
+    glowAnim.current = Animated.loop(
       Animated.sequence([
         Animated.timing(glow, { toValue: 1, duration: 1300, useNativeDriver: true }),
         Animated.timing(glow, { toValue: 0, duration: 1300, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    glowAnim.current.start();
 
-    // Clean up BLE connection and UDP socket on unmount
+    // Clean up animations, BLE connection, and UDP socket on unmount
     return () => {
+      pulseAnim.current?.stop();
+      glowAnim.current?.stop();
       client.disconnect().catch(() => {});
       sender.close();
     };
@@ -77,6 +84,7 @@ export function ConnectScreen({ navigation }: any) {
     setConnecting(true);
     setStatus(`Connecting to ${device.name}...`);
     client.onStatus = setStatus;
+    client.onDisconnected = () => { setConnected(false); sender.close(); setStatus('Headband disconnected'); };
     try {
       if (!sender.isOpen()) sender.open();
       await client.connect(device.id);
@@ -84,6 +92,7 @@ export function ConnectScreen({ navigation }: any) {
       attachPipeline(client, sender);
       navigation.navigate('Dashboard');
     } catch (e: any) {
+      await client.disconnect();
       sender.close();
       setStatus(`Connection failed: ${e.message}`);
     } finally {

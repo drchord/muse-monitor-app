@@ -1,4 +1,5 @@
 import udp from 'react-native-udp';
+import { Buffer } from 'buffer';
 import { encodeBandPower, encodeOscMessage } from './OscEncoder';
 import type { BandName } from '../ble/constants';
 

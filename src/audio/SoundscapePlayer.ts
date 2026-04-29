@@ -108,9 +108,11 @@ export class SoundscapePlayer {
     return new Promise(resolve => {
       let step = 0;
       this._fadeTimer = setInterval(async () => {
-        step++;
-        await this.sound?.setVolumeAsync((step / steps) * this.volume);
-        if (step >= steps) { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
+        try {
+          step++;
+          await this.sound?.setVolumeAsync((step / steps) * this.volume);
+          if (step >= steps) { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
+        } catch { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
       }, ms / steps);
     });
   }
@@ -121,9 +123,11 @@ export class SoundscapePlayer {
     return new Promise(resolve => {
       let step = steps;
       this._fadeTimer = setInterval(async () => {
-        step--;
-        await this.sound?.setVolumeAsync(Math.max(0, (step / steps) * this.volume));
-        if (step <= 0) { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
+        try {
+          step--;
+          await this.sound?.setVolumeAsync(Math.max(0, (step / steps) * this.volume));
+          if (step <= 0) { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
+        } catch { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
       }, ms / steps);
     });
   }

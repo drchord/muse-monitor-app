@@ -63,20 +63,20 @@ export class AudioFeedback {
     if (!this.enabled || !this.rewardSound) return;
     await this.rewardSound.replayAsync();
     const { default: Haptics } = await import('expo-haptics');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }
 
   async playDrift(): Promise<void> {
     if (!this.enabled || !this.driftSound) return;
     await this.driftSound.replayAsync();
     const { default: Haptics } = await import('expo-haptics');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
   }
 
   setVolume(v: number): void {
     this.volume = Math.max(0, Math.min(1, v));
-    this.rewardSound?.setVolumeAsync(this.volume);
-    this.driftSound?.setVolumeAsync(this.volume * 0.8);
+    this.rewardSound?.setVolumeAsync(this.volume).catch(() => {});
+    this.driftSound?.setVolumeAsync(this.volume * 0.8).catch(() => {});
   }
 
   setEnabled(v: boolean): void { this.enabled = v; }
@@ -84,5 +84,7 @@ export class AudioFeedback {
   async unload(): Promise<void> {
     await this.rewardSound?.unloadAsync();
     await this.driftSound?.unloadAsync();
+    this.rewardSound = null;
+    this.driftSound  = null;
   }
 }

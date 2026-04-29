@@ -14,8 +14,20 @@ export function attachPipeline(client: MuseClient, sender: OscSender): void {
   // Fresh processors per session — no cross-session buffer contamination
   const processors = [0, 1, 2, 3].map(() => new FFTProcessor(SAMPLE_RATE));
   let samplesSinceUpdate = 0;
+  const lastSeqId = [-1, -1, -1, -1];
 
   client.onEEG = (ch, packet) => {
+    // Detect BLE packet loss — reset FFT window on sequence gap to avoid
+    // corrupted neurofeedback output from discontinuous data.
+    if (lastSeqId[ch] !== -1) {
+      const expected = (lastSeqId[ch] + 1) & 0xffff;
+      if (packet.sequenceId !== expected) {
+        processors[ch].reset();
+        if (ch === 0) samplesSinceUpdate = 0;
+      }
+    }
+    lastSeqId[ch] = packet.sequenceId;
+
     // Each EEG characteristic (273e0013-0016) sends 12 samples from ONE electrode.
     // Route all 12 directly to the corresponding processor.
     // Channel 0 (TP9) drives the update clock; all 4 channels are synchronized.
@@ -24,7 +36,7 @@ export function attachPipeline(client: MuseClient, sender: OscSender): void {
     samplesSinceUpdate += packet.samples.length; // 12 per ch0 packet
 
     if (samplesSinceUpdate >= SAMPLES_PER_UPDATE) {
-      samplesSinceUpdate = 0;
+      samplesSinceUpdate -= SAMPLES_PER_UPDATE;
 
       const bandPowersPerCh = processors.map(p => {
         const { freqs, power } = p.getPSD();
