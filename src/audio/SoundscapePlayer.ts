@@ -32,6 +32,7 @@ export class SoundscapePlayer {
   private volume:         number = 0.5;
   private _busy:          boolean = false;
   private _audioModeSet:  boolean = false;
+  private _fadeTimer:     ReturnType<typeof setInterval> | null = null;
 
   private async _ensureAudioMode(): Promise<void> {
     if (this._audioModeSet) return;
@@ -92,6 +93,7 @@ export class SoundscapePlayer {
 
   async release(): Promise<void> {
     this._busy = false;
+    if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
     if (this.sound) {
       try { await this.sound.unloadAsync(); } catch {}
       this.sound = null;
@@ -104,10 +106,10 @@ export class SoundscapePlayer {
   private _fadeIn(steps = 20, ms = 500): Promise<void> {
     return new Promise(resolve => {
       let step = 0;
-      const timer = setInterval(async () => {
+      this._fadeTimer = setInterval(async () => {
         step++;
         await this.sound?.setVolumeAsync((step / steps) * this.volume);
-        if (step >= steps) { clearInterval(timer); resolve(); }
+        if (step >= steps) { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
       }, ms / steps);
     });
   }
@@ -116,10 +118,10 @@ export class SoundscapePlayer {
     if (!this.sound) return Promise.resolve();
     return new Promise(resolve => {
       let step = steps;
-      const timer = setInterval(async () => {
+      this._fadeTimer = setInterval(async () => {
         step--;
         await this.sound?.setVolumeAsync(Math.max(0, (step / steps) * this.volume));
-        if (step <= 0) { clearInterval(timer); resolve(); }
+        if (step <= 0) { clearInterval(this._fadeTimer!); this._fadeTimer = null; resolve(); }
       }, ms / steps);
     });
   }

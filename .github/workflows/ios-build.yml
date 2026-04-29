@@ -79,7 +79,7 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="1f724b01-e603-4f51-8162-e63b5844daf9" \
             CURRENT_PROJECT_VERSION=${{ github.run_number }}
 
-      - name: Export IPA
+      - name: Export and Upload to TestFlight
         run: |
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/MusePlus.xcarchive \
@@ -89,18 +89,4 @@ jobs:
             -authenticationKeyID 9V47M72GKG \
             -authenticationKeyIssuerID 620b8c6b-545b-4fb4-8b7f-4b527a671243 \
             -authenticationKeyPath $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8
-          ls -la $RUNNER_TEMP/ipa/
-
-      - name: Upload to TestFlight
-        run: |
-          IPA_PATH=$(ls $RUNNER_TEMP/ipa/*.ipa | head -1)
-          echo "Uploading: $IPA_PATH"
-          mkdir -p ~/.appstoreconnect/private_keys
-          cp $RUNNER_TEMP/private_keys/AuthKey_9V47M72GKG.p8 ~/.appstoreconnect/private_keys/
-          xcrun altool --upload-app \
-            -f "$IPA_PATH" \
-            --type ios \
-            --apiKey 9V47M72GKG \
-            --apiIssuer 620b8c6b-545b-4fb4-8b7f-4b527a671243 \
-            --verbose
-          echo "Uploaded to TestFlight"
+          echo "Exported and uploaded to TestFlight"

@@ -41,10 +41,14 @@ export function DashboardScreen({ navigation }: any) {
   const [history,    setHistory]    = useState<BandHistory>(emptyHistory());
   const [depthScore, setDepthScore] = useState(0);
   const [inState,    setInState]    = useState(false);
+  const artifactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     audioFeedback.load().catch(() => {});
-    return () => { audioFeedback.unload(); };
+    return () => {
+      audioFeedback.unload();
+      if (artifactTimerRef.current) clearTimeout(artifactTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -86,7 +90,8 @@ export function DashboardScreen({ navigation }: any) {
     const { blink: blinkNow, jawClench: jawNow } = artifactDetector.update(bandPowers);
     if (blinkNow || jawNow) {
       setArtifacts(blinkNow, jawNow);
-      setTimeout(() => setArtifacts(false, false), 800);
+      if (artifactTimerRef.current) clearTimeout(artifactTimerRef.current);
+      artifactTimerRef.current = setTimeout(() => setArtifacts(false, false), 800);
     }
   }, [bandPowers]);
 
