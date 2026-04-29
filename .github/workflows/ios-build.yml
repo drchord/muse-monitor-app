@@ -19,13 +19,14 @@ jobs:
 
       - name: Select Xcode 26
         run: |
-          if [ -d "/Applications/Xcode_26.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+          XCODE_26=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XCODE_26" ]; then
+            sudo xcode-select -s "$XCODE_26/Contents/Developer"
+            echo "Selected: $XCODE_26"
           else
-            echo "Available Xcode versions:"
-            ls /Applications/Xcode*.app -d
-            sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)/Contents/Developer" 2>/dev/null \
-              || { echo "Xcode 26 not available on this runner yet."; exit 1; }
+            echo "Xcode 26 not found. Available:"
+            ls -d /Applications/Xcode*.app 2>/dev/null
+            exit 1
           fi
           xcodebuild -version
 
