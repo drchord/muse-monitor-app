@@ -88,7 +88,7 @@ export class SoundscapePlayer {
 
   async setVolume(v: number): Promise<void> {
     this.volume = Math.max(0, Math.min(1, v));
-    await this.sound?.setVolumeAsync(this.volume);
+    if (this.sound) await this.sound.setVolumeAsync(this.volume).catch(() => {});
   }
 
   async release(): Promise<void> {

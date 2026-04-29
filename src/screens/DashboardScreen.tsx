@@ -41,7 +41,8 @@ export function DashboardScreen({ navigation }: any) {
   const [history,    setHistory]    = useState<BandHistory>(emptyHistory());
   const [depthScore, setDepthScore] = useState(0);
   const [inState,    setInState]    = useState(false);
-  const artifactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const artifactTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevConnectedRef    = useRef(true); // Dashboard only mounts after successful connect
 
   useEffect(() => {
     audioFeedback.load().catch(() => {});
@@ -52,6 +53,10 @@ export function DashboardScreen({ navigation }: any) {
   }, []);
 
   useEffect(() => {
+    if (prevConnectedRef.current && !connected) {
+      navigation.goBack();
+    }
+    prevConnectedRef.current = connected;
     transitionDetector.reset();
     artifactDetector.reset();
     setHistory(emptyHistory());

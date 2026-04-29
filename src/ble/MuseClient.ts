@@ -144,13 +144,8 @@ export class MuseClient {
       // ── Step 4: keepalive every 5 s ───────────────────────────────────────
       this.keepaliveTimer = setInterval(() => {
         this._sendCommand(CMD_KEEPALIVE).catch(() => {
-          if (this.keepaliveTimer) { clearInterval(this.keepaliveTimer); this.keepaliveTimer = null; }
-          this.subscriptions.forEach(s => s.remove());
-          this.subscriptions = [];
-          const dev = this.device;
-          this.device = null;
-          if (dev) { void dev.cancelConnection().catch(() => {}); }
-          this.onStatus('Disconnected');
+          // Full teardown via disconnect() — inline partial cleanup skips _stateChangeSub
+          void this.disconnect().catch(() => {});
           this.onDisconnected();
         });
       }, 5000);
