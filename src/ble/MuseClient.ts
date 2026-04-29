@@ -50,6 +50,7 @@ export class MuseClient {
   private keepaliveTimer:  ReturnType<typeof setInterval> | null = null;
   private subscriptions:   Subscription[] = [];
   private _stateChangeSub: Subscription | null = null;
+  private _disconnecting:  boolean = false;
 
   onEEG:          EEGCallback     = () => {};
   onAcc:          MotionCallback  = () => {};
@@ -143,9 +144,10 @@ export class MuseClient {
 
       // ── Step 4: keepalive every 5 s ───────────────────────────────────────
       this.keepaliveTimer = setInterval(() => {
-        this._sendCommand(CMD_KEEPALIVE).catch(() => {
-          // Full teardown via disconnect() — inline partial cleanup skips _stateChangeSub
-          void this.disconnect().catch(() => {});
+        this._sendCommand(CMD_KEEPALIVE).catch(async () => {
+          // Await full teardown so onDisconnected fires after disconnect completes
+          // and sender.close() doesn't race with in-flight _sendCommand calls.
+          await this.disconnect().catch(() => {});
           this.onDisconnected();
         });
       }, 5000);
@@ -160,6 +162,8 @@ export class MuseClient {
   // ─── Disconnect ───────────────────────────────────────────────────────────
 
   async disconnect(): Promise<void> {
+    if (this._disconnecting) return;
+    this._disconnecting = true;
     // Cancel pending BLE state subscription
     this._stateChangeSub?.remove();
     this._stateChangeSub = null;
@@ -178,6 +182,7 @@ export class MuseClient {
       try { await this.device.cancelConnection(); } catch {}
       this.device = null;
     }
+    this._disconnecting = false;
   }
 
   // ─── Write ────────────────────────────────────────────────────────────────

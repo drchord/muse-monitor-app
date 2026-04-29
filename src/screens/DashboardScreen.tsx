@@ -62,7 +62,7 @@ export function DashboardScreen({ navigation }: any) {
     setHistory(emptyHistory());
     setDepthScore(0);
     setInState(false);
-  }, [connected]);
+  }, [connected, navigation]);
 
   useEffect(() => {
     if (!bandPowers) return;

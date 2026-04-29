@@ -82,8 +82,8 @@ export class AudioFeedback {
   setEnabled(v: boolean): void { this.enabled = v; }
 
   async unload(): Promise<void> {
-    await this.rewardSound?.unloadAsync();
-    await this.driftSound?.unloadAsync();
+    try { await this.rewardSound?.unloadAsync(); } catch {}
+    try { await this.driftSound?.unloadAsync();  } catch {}
     this.rewardSound = null;
     this.driftSound  = null;
   }
