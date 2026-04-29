@@ -145,10 +145,11 @@ export class MuseClient {
       // ── Step 4: keepalive every 5 s ───────────────────────────────────────
       this.keepaliveTimer = setInterval(() => {
         this._sendCommand(CMD_KEEPALIVE).catch(async () => {
-          // Await full teardown so onDisconnected fires after disconnect completes
-          // and sender.close() doesn't race with in-flight _sendCommand calls.
+          // Snapshot flag before awaiting — if a concurrent disconnect() is already
+          // in-flight, skip onDisconnected to prevent double navigation.goBack().
+          const wasAlreadyDisconnecting = this._disconnecting;
           await this.disconnect().catch(() => {});
-          this.onDisconnected();
+          if (!wasAlreadyDisconnecting) this.onDisconnected();
         });
       }, 5000);
 
@@ -164,25 +165,26 @@ export class MuseClient {
   async disconnect(): Promise<void> {
     if (this._disconnecting) return;
     this._disconnecting = true;
-    // Cancel pending BLE state subscription
-    this._stateChangeSub?.remove();
-    this._stateChangeSub = null;
+    try {
+      this._stateChangeSub?.remove();
+      this._stateChangeSub = null;
 
-    // Remove all characteristic subscriptions
-    this.subscriptions.forEach(s => s.remove());
-    this.subscriptions = [];
+      this.subscriptions.forEach(s => s.remove());
+      this.subscriptions = [];
 
-    if (this.keepaliveTimer) {
-      clearInterval(this.keepaliveTimer);
-      this.keepaliveTimer = null;
+      if (this.keepaliveTimer) {
+        clearInterval(this.keepaliveTimer);
+        this.keepaliveTimer = null;
+      }
+      if (this.device) {
+        try { await this._sendCommand(CMD_STOP); } catch {}
+        await this._delay(200);
+        try { await this.device.cancelConnection(); } catch {}
+        this.device = null;
+      }
+    } finally {
+      this._disconnecting = false;
     }
-    if (this.device) {
-      try { await this._sendCommand(CMD_STOP); } catch {}
-      await this._delay(200);
-      try { await this.device.cancelConnection(); } catch {}
-      this.device = null;
-    }
-    this._disconnecting = false;
   }
 
   // ─── Write ────────────────────────────────────────────────────────────────
