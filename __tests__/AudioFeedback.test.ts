@@ -73,15 +73,15 @@ describe('AudioFeedback', () => {
     await expect(af.unload()).resolves.toBeUndefined();
   });
 
-  test('unload() after load() releases both sounds', async () => {
+  test('unload() after load() calls unloadAsync on both sounds', async () => {
     const af = new AudioFeedback();
     await af.load();
-    const mockSound = Audio.Sound.createAsync.mock.results[0].value;
+    // The mock always returns the same sound object for both createAsync calls
+    const { sound: mockSound } = await Audio.Sound.createAsync.mock.results[0].value;
     jest.clearAllMocks();
     await af.unload();
-    // Both rewardSound and driftSound are the same mockSound object from the mock
-    await expect(mockSound).resolves.toMatchObject({ sound: expect.objectContaining({ unloadAsync: expect.any(Function) }) });
-    expect(Audio.Sound.createAsync).not.toHaveBeenCalled(); // no re-load during unload
+    // rewardSound.unloadAsync() + driftSound.unloadAsync() — same object, called twice
+    expect(mockSound.unloadAsync).toHaveBeenCalledTimes(2);
   });
 
   test('load() works again after unload() — handles were nulled correctly', async () => {
