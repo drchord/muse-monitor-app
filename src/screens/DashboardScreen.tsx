@@ -140,7 +140,7 @@ export function DashboardScreen({ navigation }: any) {
       {/* EEG chart */}
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>EEG Band Powers</Text>
-        <BandChart history={history} windowSize={60} />
+        <BandChart history={history} />
       </View>
 
       {/* OSC control */}

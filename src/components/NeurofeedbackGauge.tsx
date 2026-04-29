@@ -7,7 +7,7 @@ interface Props {
 }
 
 export function NeurofeedbackGauge({ score, inState }: Props) {
-  const pct = Math.round(score);
+  const pct = Math.min(100, Math.max(0, Math.round(score)));
   const color = inState ? '#22c55e' : '#6366f1';
 
   return (

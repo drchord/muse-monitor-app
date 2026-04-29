@@ -11,7 +11,6 @@ interface BandHistory {
 
 interface Props {
   history: BandHistory;
-  windowSize?: number;
 }
 
 const BAND_COLORS: Record<string, string> = {
@@ -24,7 +23,7 @@ const BAND_COLORS: Record<string, string> = {
 
 const BAND_ORDER = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
 
-export function BandChart({ history, windowSize = 60 }: Props) {
+export function BandChart({ history }: Props) {
   // Simple text-based chart fallback (Victory Native requires device for rendering)
   // The actual chart renders on device via victory-native
   const latest = BAND_ORDER.map(band => {
