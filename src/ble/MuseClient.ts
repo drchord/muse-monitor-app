@@ -61,16 +61,14 @@ export class MuseClient {
 
   private async _waitForPoweredOn(): Promise<void> {
     return new Promise((resolve, reject) => {
+      const cleanup = () => { this._stateChangeSub?.remove(); this._stateChangeSub = null; };
+      const timer = setTimeout(() => { cleanup(); reject(new Error('BLE state timeout')); }, 10000);
       this._stateChangeSub = this.manager.onStateChange(state => {
         if (state === 'PoweredOn') {
-          this._stateChangeSub?.remove(); this._stateChangeSub = null; resolve();
+          clearTimeout(timer); cleanup(); resolve();
         }
-        if (
-          state === 'PoweredOff' ||
-          state === 'Unauthorized' ||
-          state === 'Unsupported'
-        ) {
-          this._stateChangeSub?.remove(); this._stateChangeSub = null;
+        if (state === 'PoweredOff' || state === 'Unauthorized' || state === 'Unsupported') {
+          clearTimeout(timer); cleanup();
           reject(new Error(`Bluetooth unavailable: ${state}`));
         }
       }, true);

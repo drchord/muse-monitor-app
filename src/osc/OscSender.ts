@@ -25,7 +25,7 @@ export class OscSender {
   open(): void {
     if (this.socket) return; // idempotent
     this.socket = udp.createSocket({ type: 'udp4' });
-    this.socket.bind(0);
+    this.socket.bind(0, undefined, (err?: Error) => { if (err) console.warn('[OSC] bind error:', err.message); });
   }
 
   close(): void {

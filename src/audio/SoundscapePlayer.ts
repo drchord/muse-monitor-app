@@ -104,6 +104,7 @@ export class SoundscapePlayer {
   getCurrentKey(): string | null { return this.currentKey; }
 
   private _fadeIn(steps = 20, ms = 500): Promise<void> {
+    if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
     return new Promise(resolve => {
       let step = 0;
       this._fadeTimer = setInterval(async () => {
@@ -116,6 +117,7 @@ export class SoundscapePlayer {
 
   private _fadeOut(steps = 15, ms = 300): Promise<void> {
     if (!this.sound) return Promise.resolve();
+    if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
     return new Promise(resolve => {
       let step = steps;
       this._fadeTimer = setInterval(async () => {

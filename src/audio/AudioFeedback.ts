@@ -40,7 +40,7 @@ export class AudioFeedback {
   private enabled = true;
 
   async load(): Promise<void> {
-    // Dynamic import to avoid Jest issues with expo-av native module
+    if (this.rewardSound) return; // already loaded — guard against remount leak
     const { Audio } = await import('expo-av');
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS:    true,

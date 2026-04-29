@@ -41,7 +41,7 @@ export function SoundscapeScreen() {
 
   const handleVolume = async (v: number) => {
     setVolume(v);
-    await player.setVolume(v);
+    try { await player.setVolume(v); } catch {}
   };
 
   const handleSpotifyConnect = async () => {

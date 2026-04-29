@@ -13,6 +13,7 @@ export class ArtifactDetector {
   private gammaHist: number[] = [];
 
   update(bp: BandPowerMap): { blink: boolean; jawClench: boolean } {
+    if (bp.delta.length < 3 || bp.gamma.length === 0) return { blink: false, jawClench: false };
     const frontDelta = (bp.delta[1] + bp.delta[2]) / 2;
     const avgGamma   = bp.gamma.reduce((a, b) => a + b, 0) / bp.gamma.length;
 

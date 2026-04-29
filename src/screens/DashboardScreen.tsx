@@ -84,8 +84,8 @@ export function DashboardScreen({ navigation }: any) {
     setDepthScore(score);
     setInState(score > 60);
     const transition = transitionDetector.update(score);
-    if (transition === 'enter') audioFeedback.playReward();
-    if (transition === 'drift')  audioFeedback.playDrift();
+    if (transition === 'enter') audioFeedback.playReward().catch(() => {});
+    if (transition === 'drift')  audioFeedback.playDrift().catch(() => {});
 
     const { blink: blinkNow, jawClench: jawNow } = artifactDetector.update(bandPowers);
     if (blinkNow || jawNow) {
